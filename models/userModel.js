@@ -67,13 +67,11 @@ userSchema.statics.signin = async function (email, password) {
   }
 
   const user = await this.findOne({ email });
-
   if (!user) {
     throw Error("There was no user under this email");
   }
 
   const match = await bcrypt.compare(password, user.password);
-
   if (!match) {
     throw Error("Password doesn't match");
   }

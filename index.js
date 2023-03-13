@@ -4,8 +4,11 @@ import bodyParser from "body-parser";
 import dotenv from "dotenv";
 import Connection from "./database/db.js";
 import authRoute from "./routes/auth.js";
-import userRoute from "./routes/user.js";
-import adminRoute from "./routes/admin.js";
+import movieRoutes from "./routes/movie.js";
+import theatersRoutes from "./routes/theater.js";
+import showtimesRoutes from "./routes/showtime.js";
+import bookingsRoutes from "./routes/booking.js";
+
 dotenv.config();
 
 // app
@@ -17,8 +20,10 @@ app.use(cors());
 
 // routes
 app.use("/api/user", authRoute);
-// app.use("/api/user", userRoute);
-app.use("/api/admin", adminRoute);
+app.use("/api/movies", movieRoutes);
+app.use("/api/theaters", theatersRoutes);
+app.use("/api/showtimes", showtimesRoutes);
+app.use("/api/bookings", bookingsRoutes);
 
 //database connect
 const name = process.env.DB_USERNAME;
