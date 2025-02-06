@@ -1,15 +1,10 @@
+// import "./config/envConfig.js";
+import "dotenv/config";
 import express from "express";
 import cors from "cors";
 import bodyParser from "body-parser";
-import dotenv from "dotenv";
-import Connection from "./database/db.js";
-import authRoute from "./routes/auth.js";
-import movieRoutes from "./routes/movie.js";
-import theatersRoutes from "./routes/theater.js";
-import showtimesRoutes from "./routes/showtime.js";
-import bookingsRoutes from "./routes/booking.js";
-
-dotenv.config();
+import Connection from "./config/db/index.js";
+import Routes from "./routes/index.js";
 
 // app
 const app = express();
@@ -19,11 +14,7 @@ app.use(bodyParser.json());
 app.use(cors());
 
 // routes
-app.use("/api/user", authRoute);
-app.use("/api/movies", movieRoutes);
-app.use("/api/theaters", theatersRoutes);
-app.use("/api/showtimes", showtimesRoutes);
-app.use("/api/bookings", bookingsRoutes);
+app.use("/api/v1", Routes);
 
 //database connect
 const name = process.env.DB_USERNAME;

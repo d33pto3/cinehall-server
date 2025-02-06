@@ -3,7 +3,7 @@ import jwt from "jsonwebtoken";
 
 // create token function
 const createToken = (_id) => {
-  return jwt.sign({ _id }, process.env.SECRET, { expiresIn: "3d" });
+  return jwt.sign({ _id }, process.env.SECRET, { expiresIn: "7d" });
 };
 
 //signup user
@@ -15,15 +15,13 @@ export const signup = async (req, res) => {
     // create a token
     const token = createToken(user._id);
 
-    res
-      .status(200)
-      .json({
-        email: user.email,
-        name: user.name,
-        role: user.role,
-        _id: user._id,
-        token,
-      });
+    res.status(200).json({
+      email: user.email,
+      name: user.name,
+      role: user.role,
+      _id: user._id,
+      token,
+    });
   } catch (err) {
     res.status(400).json({ error: err.message });
   }
