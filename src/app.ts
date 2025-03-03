@@ -1,11 +1,13 @@
-// import "./config/envConfig.js";
+/*==============================
+Core Packages and Imports
+==============================*/
 import "dotenv/config";
 import express from "express";
 import cors from "cors";
 import bodyParser from "body-parser";
-import Connection from "./config/db/index.js";
-import Routes from "./routes/index.js";
-import { requestLogger } from "./middlewares/requestLogger.js";
+import Connection from "./config/db/index";
+import { requestLogger } from "./middlewares/requestLogger";
+import Routes from "./routes";
 
 // app
 const app = express();

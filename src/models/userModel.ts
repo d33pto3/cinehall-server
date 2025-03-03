@@ -3,7 +3,7 @@ const Schema = mongoose.Schema;
 import bcrypt from "bcrypt";
 import validator from "validator";
 
-let userSchema = new Schema(
+const userSchema = new Schema(
   {
     name: {
       type: String,
@@ -26,12 +26,16 @@ let userSchema = new Schema(
   },
   {
     timestamps: true,
-    collection: "users",
-  }
+  },
 );
 
 // static signup method
-userSchema.statics.signup = async function (name, email, password, role) {
+userSchema.statics.signup = async function (
+  name,
+  email,
+  password,
+  // role
+) {
   //validation
   if (!email || !password) {
     throw Error("All fields must be filled");

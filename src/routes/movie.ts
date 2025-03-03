@@ -6,7 +6,7 @@ import {
   getMovies,
   createMovie,
   getMovieById,
-} from "../controllers/movieController.js";
+} from "../controllers/movieController";
 
 // Movie routes
 router.post("/", createMovie);
