@@ -1,8 +1,9 @@
 // MovieController
-import Movie from "../models/movieModle.js";
+import { Request, Response } from "express";
+import Movie from "../models/movieModle";
 
 // Get all movies
-export const getMovies = (req, res) => {
+export const getMovies = (req: Request, res: Response) => {
   Movie.find()
     .then((movies) => {
       res.status(200).json(movies);
@@ -16,7 +17,7 @@ export const getMovies = (req, res) => {
 };
 
 //create a new movie
-export const createMovie = async (req, res) => {
+export const createMovie = async (req: Request, res: Response) => {
   const movie = new Movie({
     title: req.body.title,
     duration: req.body.duration,
@@ -30,16 +31,16 @@ export const createMovie = async (req, res) => {
     const newMovie = await movie.save();
     res.status(201).json(newMovie);
   } catch (err) {
-    res.status(400).json({ message: err.message });
+    if (err instanceof Error) res.status(400).json({ message: err.message });
   }
 };
 
 // Get a single movie by ID
-export const getMovieById = async (req, res) => {
+export const getMovieById = async (req: Request, res: Response) => {
   try {
     const movie = await Movie.findById(req.params.id);
     res.json(movie);
   } catch (err) {
-    res.status(500).json({ message: err.message });
+    if (err instanceof Error) res.status(500).json({ message: err.message });
   }
 };
