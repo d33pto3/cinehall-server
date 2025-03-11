@@ -9,8 +9,8 @@ import {
 } from "../controllers/movieController";
 
 // Movie routes
-router.post("/", createMovie);
-router.get("/", getMovies);
+router.route("/").get(getMovies).post(createMovie);
+
 router.get("/:id", getMovieById);
 
 export default router;

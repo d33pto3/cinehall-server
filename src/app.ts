@@ -10,6 +10,7 @@ import { requestLogger } from "./middlewares/requestLogger";
 import Routes from "./routes";
 import errorMiddleware from "./middlewares/errorHandler";
 import { handleNotFound } from "./middlewares/handleNotFound";
+import cookieParser from "cookie-parser";
 
 /*==============================
 Environment Setup
@@ -37,6 +38,7 @@ app.use(cors());
 app.use(bodyParser.urlencoded({ extended: false }));
 app.use(bodyParser.json());
 app.use(requestLogger);
+app.use(cookieParser());
 
 /*==========================
 Routes

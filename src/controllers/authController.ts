@@ -5,6 +5,8 @@ import AppError from "../utils/AppError";
 import { createToken } from "../utils";
 import bcrypt from "bcrypt";
 
+const COOKIE_EXPIRES_IN = 1 * 24 * 60 * 60 * 1000;
+
 export const firebaseLogin = async (req: Request, res: Response) => {
   const { idToken } = req.body;
 
@@ -24,12 +26,20 @@ export const firebaseLogin = async (req: Request, res: Response) => {
       email,
       firebaseUid: uid,
       name: name || "Anonymous", // Default name if not provided
+      role: "user",
     });
     await user.save();
   }
 
   // Generate a JWT token for your backend
   const token = createToken(user._id);
+
+  res.cookie("token", token, {
+    httpOnly: true, // Prevents client-side JS from reading the cookie
+    secure: process.env.NODE_ENV === "production", // Ensures the browser only sends the cookie over HTTPS in production
+    maxAge: COOKIE_EXPIRES_IN, // Sets the cookie to expire in 1 day
+    sameSite: "strict",
+  });
 
   // Send the token and user information back to the client
   res.status(200).json({
@@ -46,6 +56,10 @@ export const firebaseLogin = async (req: Request, res: Response) => {
 export const register = async (req: Request, res: Response) => {
   const { email, password, name } = req.body;
 
+  if (!email || !password || !name) {
+    throw new AppError("Please provide email, password and name", 400);
+  }
+
   const existingUser = await User.findOne({ email });
 
   if (existingUser) {
@@ -58,6 +72,7 @@ export const register = async (req: Request, res: Response) => {
     email,
     password: hashedPassword,
     name,
+    role: "user",
   });
 
   await user.save();
@@ -71,6 +86,7 @@ export const register = async (req: Request, res: Response) => {
       _id: user._id,
       email: user.email,
       name: user.name,
+      role: user.role,
     },
   });
 };
@@ -104,6 +120,20 @@ export const emailPasswordLogin = async (req: Request, res: Response) => {
       _id: user._id,
       email: user.email,
       name: user.name,
+      role: user.role,
     },
   });
+};
+
+export const logout = async (req: Request, res: Response): Promise<void> => {
+  const token = req.cookies.token;
+
+  if (!token) {
+    // User is already logged out
+    throw new AppError("Already logged out", 400);
+  }
+
+  // Clear the token cookie
+  res.clearCookie("token");
+  res.status(200).json({ success: true, message: "Logged out successfully" });
 };
