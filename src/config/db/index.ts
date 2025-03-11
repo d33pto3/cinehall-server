@@ -1,7 +1,7 @@
 import "dotenv/config";
 import mongoose from "mongoose";
 
-const Connection = async () => {
+const connectToDB = async () => {
   const url = `mongodb+srv://${process.env.DB_NAME}:${process.env.DB_PASS}@cluster0.4uzqz.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0`;
 
   const URL = url;
@@ -15,4 +15,4 @@ const Connection = async () => {
   }
 };
 
-export default Connection;
+export default connectToDB;

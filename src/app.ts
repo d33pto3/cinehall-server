@@ -1,29 +1,61 @@
 /*==============================
 Core Packages and Imports
 ==============================*/
-import "dotenv/config";
-import express from "express";
+import dotenv from "dotenv";
+import express, { Request, Response } from "express";
 import cors from "cors";
 import bodyParser from "body-parser";
-import Connection from "./config/db/index";
+import connectToDB from "./config/db";
 import { requestLogger } from "./middlewares/requestLogger";
 import Routes from "./routes";
+import errorMiddleware from "./middlewares/errorHandler";
+import { handleNotFound } from "./middlewares/handleNotFound";
 
-// app
+/*==============================
+Environment Setup
+==============================*/
+const environment = process.env.NODE_ENV || "development";
+dotenv.config({ path: `.env.${environment}` });
+
+console.log(`Running in ${environment} mode`);
+
+/*==============================
+App Initialization
+==============================*/
 const app = express();
+const PORT = process.env.PORT || 8000;
 
-//middlewares
-app.use(bodyParser.json());
+/*==============================
+Connect to DB
+==============================*/
+connectToDB();
+
+/*==============================
+Middlewares
+==============================*/
 app.use(cors());
+app.use(bodyParser.urlencoded({ extended: false }));
+app.use(bodyParser.json());
 app.use(requestLogger);
 
-// routes
+/*==========================
+Routes
+===========================*/
 app.use("/api/v1", Routes);
+app.get("/api/v1", (_req: Request, res: Response) => {
+  res.status(200).send("Hello to CineHall!!!!");
+});
 
-//database connect
-Connection();
+/*========================== 
+Error Handling
+==========================*/
+app.use(errorMiddleware); // Error handling middleware
+app.use(handleNotFound); // Handle endpoints not Found
 
-app.listen(process.env.PORT || 8000, (err) => {
+/*==========================
+Start the Server
+==========================*/
+app.listen(PORT, (err) => {
   if (err) {
     console.log(err);
   }

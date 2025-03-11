@@ -1,55 +1,109 @@
-// import { Request, Response } from "express";
-import jwt from "jsonwebtoken";
-import { ObjectId } from "mongoose";
+import { Request, Response } from "express";
+import { firebaseAdmin } from "../config/firebase";
+import { User } from "../models/userModel";
+import AppError from "../utils/AppError";
+import { createToken } from "../utils";
+import bcrypt from "bcrypt";
 
-// create token function
-export const createToken = (_id: ObjectId) => {
-  const secret = process.env.SECRET;
-  if (!secret) {
-    throw new Error("JWT secret is not defined");
+export const firebaseLogin = async (req: Request, res: Response) => {
+  const { idToken } = req.body;
+
+  if (!idToken) {
+    throw new AppError("No ID token provided", 400);
   }
-  return jwt.sign({ _id }, secret, { expiresIn: "7d" });
+  // Verify the Firebase ID token
+  const decodedToken = await firebaseAdmin.auth().verifyIdToken(idToken);
+  const { uid, email, name } = decodedToken;
+
+  // Check if the user already exists in the database
+  let user = await User.findOne({ firebaseUid: uid });
+
+  if (!user) {
+    // Create a new user if they don't exist
+    user = new User({
+      email,
+      firebaseUid: uid,
+      name: name || "Anonymous", // Default name if not provided
+    });
+    await user.save();
+  }
+
+  // Generate a JWT token for your backend
+  const token = createToken(user._id);
+
+  // Send the token and user information back to the client
+  res.status(200).json({
+    success: true,
+    token,
+    user: {
+      _id: user._id,
+      email: user.email,
+      name: user.name,
+    },
+  });
 };
 
-export const signup = () => {};
-export const signin = () => {};
+export const register = async (req: Request, res: Response) => {
+  const { email, password, name } = req.body;
 
-// //signup user
-// export const signup = async (req: Request, res: Response) => {
-//   const { name, email, password, role } = req.body;
-//   try {
-//     const user = await Auth.signup(name, email, password, role);
+  const existingUser = await User.findOne({ email });
 
-//     // create a token
-//     const token = createToken(user._id);
+  if (existingUser) {
+    throw new AppError("User already exists", 400);
+  }
 
-//     res.status(200).json({
-//       email: user.email,
-//       name: user.name,
-//       role: user.role,
-//       _id: user._id,
-//       token,
-//     });
-//   } catch (err) {
-//     if (err instanceof Error) {
-//       return res.status(400).json({ error: err.message });
-//     }
-//   }
-// };
+  const hashedPassword = await bcrypt.hash(password, 10);
 
-// //signin user
-// export const signin = async (req: Request, res: Response) => {
-//   const { email, password } = req.body;
-//   try {
-//     const user = await Auth.signin(email, password);
+  const user = new User({
+    email,
+    password: hashedPassword,
+    name,
+  });
 
-//     // create a token
-//     const token = createToken(user._id);
+  await user.save();
 
-//     res.status(200).json({ user, token });
-//   } catch (err) {
-//     if (err instanceof Error) {
-//       return res.status(400).json({ error: err.message
-//       });
-//   }
-// }
+  const token = createToken(user._id);
+
+  res.status(201).json({
+    success: true,
+    token,
+    user: {
+      _id: user._id,
+      email: user.email,
+      name: user.name,
+    },
+  });
+};
+
+export const emailPasswordLogin = async (req: Request, res: Response) => {
+  const { email, password } = req.body;
+
+  if (!email || !password) {
+    throw new AppError("Please provide email and password", 400);
+  }
+
+  const user = await User.findOne({ email });
+
+  if (!user) {
+    throw new AppError("User not found", 404);
+  }
+
+  // Compare passwords
+  const isMatch = await bcrypt.compare(password, user.password!);
+
+  if (!isMatch) {
+    throw new AppError("Invalid password", 401);
+  }
+
+  const token = createToken(user._id);
+
+  res.status(200).json({
+    success: true,
+    token,
+    user: {
+      _id: user._id,
+      email: user.email,
+      name: user.name,
+    },
+  });
+};
