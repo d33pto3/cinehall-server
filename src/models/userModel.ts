@@ -4,6 +4,7 @@ const Schema = mongoose.Schema;
 enum Role {
   User = "user",
   Admin = "admin",
+  HallOwner = "hallOwner",
 }
 
 export interface IUser extends Document {
