@@ -48,15 +48,16 @@ export const firebaseLogin = async (req: Request, res: Response) => {
     user: {
       _id: user._id,
       email: user.email,
-      name: user.name,
+      name: user.username,
     },
   });
 };
 
 export const register = async (req: Request, res: Response) => {
-  const { email, password, name } = req.body;
+  const { email, password, username, phone } = req.body;
+  console.log(email, password, username, phone);
 
-  if (!email || !password || !name) {
+  if (!email || !password || !username) {
     throw new AppError("Please provide email, password and name", 400);
   }
 
@@ -71,7 +72,8 @@ export const register = async (req: Request, res: Response) => {
   const user = new User({
     email,
     password: hashedPassword,
-    name,
+    username,
+    phone,
     role: "user",
   });
 
@@ -79,14 +81,22 @@ export const register = async (req: Request, res: Response) => {
 
   const token = createToken(user._id);
 
+  // Save the token in a cookie
+  res.cookie("token", token, {
+    httpOnly: true,
+    secure: process.env.NODE_ENV === "production",
+    maxAge: COOKIE_EXPIRES_IN,
+    sameSite: "strict",
+  });
+
   res.status(201).json({
     success: true,
-    token,
     user: {
       _id: user._id,
       email: user.email,
-      name: user.name,
+      name: user.username,
       role: user.role,
+      phone: user.phone,
     },
   });
 };
@@ -113,13 +123,20 @@ export const emailPasswordLogin = async (req: Request, res: Response) => {
 
   const token = createToken(user._id);
 
+  // Save the token in a cookie
+  res.cookie("token", token, {
+    httpOnly: true,
+    secure: process.env.NODE_ENV === "production",
+    maxAge: COOKIE_EXPIRES_IN,
+    sameSite: "strict",
+  });
+
   res.status(200).json({
     success: true,
-    token,
     user: {
       _id: user._id,
       email: user.email,
-      name: user.name,
+      name: user.username,
       role: user.role,
     },
   });
