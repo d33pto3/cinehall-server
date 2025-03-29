@@ -4,8 +4,24 @@ import { User } from "../models/userModel";
 import AppError from "../utils/AppError";
 import { createToken } from "../utils";
 import bcrypt from "bcrypt";
+import jwt from "jsonwebtoken";
 
-const COOKIE_EXPIRES_IN = 1 * 24 * 60 * 60 * 1000;
+const COOKIE_EXPIRES_IN = 3 * 24 * 60 * 60 * 1000;
+const COOKIE_OPTIONS = {
+  httpOnly: true,
+  secure: process.env.NODE_ENV === "production",
+  maxAge: COOKIE_EXPIRES_IN,
+  sameSite: "strict" as const,
+};
+
+// Helper function to format user response
+// const formatUserResponse = (user: any): IUserResponse => ({
+//   _id: user._id,
+//   email: user.email,
+//   name: user.username || user.name || "Anonymous",
+//   ...(user.role && { role: user.role }),
+//   ...(user.phone && { phone: user.phone }),
+// });
 
 export const firebaseLogin = async (req: Request, res: Response) => {
   const { idToken } = req.body;
@@ -73,21 +89,15 @@ export const register = async (req: Request, res: Response) => {
     email,
     password: hashedPassword,
     username,
-    phone,
+    ...(phone && { phone }),
     role: "user",
   });
 
   await user.save();
-
   const token = createToken(user._id);
 
   // Save the token in a cookie
-  res.cookie("token", token, {
-    httpOnly: true,
-    secure: process.env.NODE_ENV === "production",
-    maxAge: COOKIE_EXPIRES_IN,
-    sameSite: "strict",
-  });
+  res.cookie("token", token, COOKIE_OPTIONS);
 
   res.status(201).json({
     success: true,
@@ -143,7 +153,7 @@ export const emailPasswordLogin = async (req: Request, res: Response) => {
 };
 
 export const logout = async (req: Request, res: Response): Promise<void> => {
-  const token = req.cookies.token;
+  const token = req.cookies?.token;
 
   if (!token) {
     // User is already logged out
@@ -153,4 +163,39 @@ export const logout = async (req: Request, res: Response): Promise<void> => {
   // Clear the token cookie
   res.clearCookie("token");
   res.status(200).json({ success: true, message: "Logged out successfully" });
+};
+
+export const authCheck = async (req: Request, res: Response): Promise<void> => {
+  // 1. Get token from cookies
+  const token = req.cookies?.token;
+
+  if (!token) {
+    throw new AppError("Already logged out", 400);
+  }
+
+  // 2. Verify token
+  const decoded = jwt.verify(token, process.env.JWT_SECRET!) as {
+    _id: string;
+  };
+  console.log(decoded);
+
+  // 3. Fetch user data (simplified example)
+  const user = await User.findById(decoded._id);
+
+  if (!user) {
+    throw new AppError("User not found", 404);
+  }
+
+  // Send the user details back
+  // 4. Return user data
+  res.status(200).json({
+    success: true,
+    user: {
+      _id: user?._id,
+      email: user?.email,
+      username: user?.username,
+      phone: user?.phone,
+      role: user?.role,
+    },
+  });
 };
