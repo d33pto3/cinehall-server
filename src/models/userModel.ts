@@ -4,20 +4,22 @@ const Schema = mongoose.Schema;
 enum Role {
   User = "user",
   Admin = "admin",
+  HallOwner = "hallOwner",
 }
 
 export interface IUser extends Document {
-  name: string;
+  username: string;
   email: string;
   password?: string;
   role: Role;
+  phone: number;
   createdAt: Date;
   updatedAt: Date;
 }
 
 const userSchema = new Schema<IUser>(
   {
-    name: {
+    username: {
       type: String,
       required: true,
       unique: true,
@@ -42,6 +44,10 @@ const userSchema = new Schema<IUser>(
       type: String,
       enum: Role,
       required: true,
+    },
+    phone: {
+      type: Number,
+      required: false,
     },
   },
   {
