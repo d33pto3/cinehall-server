@@ -35,7 +35,8 @@ export const firebaseLogin = async (req: Request, res: Response) => {
   const { uid, email, name, picture } = decodedToken;
 
   const displayName =
-    name || (email && email.split("@")[0] + Math.floor(Math.random() * 1000));
+    name.split(" ")[0] ||
+    (email && email.split("@")[0] + Math.floor(Math.random() * 1000));
 
   // Check if the user already exists in the database
   let user = await User.findOne({ $or: [{ firebaseUid: uid }, { email }] });
