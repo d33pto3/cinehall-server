@@ -13,6 +13,8 @@ export interface IUser extends Document {
   password?: string;
   role: Role;
   phone: number;
+  avatar?: string;
+  firebaseUid?: string;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -22,7 +24,10 @@ const userSchema = new Schema<IUser>(
     username: {
       type: String,
       required: true,
-      unique: true,
+      default: function () {
+        // Default to email prefix if name not provided
+        return this.email.split("@")[0];
+      },
     },
     email: {
       type: String,
@@ -47,6 +52,14 @@ const userSchema = new Schema<IUser>(
     },
     phone: {
       type: Number,
+      required: false,
+    },
+    avatar: {
+      type: String,
+      required: false,
+    },
+    firebaseUid: {
+      type: String,
       required: false,
     },
   },

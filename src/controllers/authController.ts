@@ -29,21 +29,30 @@ export const firebaseLogin = async (req: Request, res: Response) => {
   if (!idToken) {
     throw new AppError("No ID token provided", 400);
   }
+
   // Verify the Firebase ID token
   const decodedToken = await firebaseAdmin.auth().verifyIdToken(idToken);
-  const { uid, email, name } = decodedToken;
+  const { uid, email, name, picture } = decodedToken;
+
+  const displayName =
+    name || (email && email.split("@")[0] + Math.floor(Math.random() * 1000));
 
   // Check if the user already exists in the database
-  let user = await User.findOne({ firebaseUid: uid });
+  let user = await User.findOne({ $or: [{ firebaseUid: uid }, { email }] });
 
   if (!user) {
     // Create a new user if they don't exist
     user = new User({
       email,
       firebaseUid: uid,
-      name: name || "Anonymous", // Default name if not provided
+      username: displayName, // Default name if not provided
       role: "user",
+      avatar: picture || null,
     });
+    await user.save();
+  } else if (user.firebaseUid !== uid) {
+    // Update existing user with Firebase UID if missing
+    user.firebaseUid = uid;
     await user.save();
   }
 
@@ -55,16 +64,18 @@ export const firebaseLogin = async (req: Request, res: Response) => {
     secure: process.env.NODE_ENV === "production", // Ensures the browser only sends the cookie over HTTPS in production
     maxAge: COOKIE_EXPIRES_IN, // Sets the cookie to expire in 1 day
     sameSite: "strict",
+    // path: "/",
   });
 
   // Send the token and user information back to the client
   res.status(200).json({
     success: true,
-    token,
     user: {
       _id: user._id,
       email: user.email,
-      name: user.username,
+      username: user.username,
+      role: user.role,
+      avatar: user.avatar,
     },
   });
 };
