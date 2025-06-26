@@ -1,9 +1,9 @@
 // TheaterController
 import { Request, Response } from "express";
-import Theater from "../models/theaterModel";
+import Theater from "../models/hall.model";
 
 // Create a new theater
-export const createTheater = async (req: Request, res: Response) => {
+export const createHall = async (req: Request, res: Response) => {
   try {
     const { name, address, capacity } = req.body;
     const theater = new Theater({ name, address, capacity });
@@ -14,7 +14,7 @@ export const createTheater = async (req: Request, res: Response) => {
   }
 };
 
-export const getTheaters = async (req: Request, res: Response) => {
+export const getHalls = async (req: Request, res: Response) => {
   try {
     const theaters = await Theater.find();
     res.status(200).json(theaters);
@@ -24,7 +24,7 @@ export const getTheaters = async (req: Request, res: Response) => {
 };
 
 // get a single theater by id
-export const getTheaterById = async (req: Request, res: Response) => {
+export const getHallById = async (req: Request, res: Response) => {
   try {
     const theaters = await Theater.findOne();
     res.status(200).json(theaters);
@@ -34,7 +34,7 @@ export const getTheaterById = async (req: Request, res: Response) => {
 };
 
 // delete a theater by id
-export const deleteTheater = async (req: Request, res: Response) => {
+export const deleteHall = async (req: Request, res: Response) => {
   try {
     await Theater.findByIdAndDelete(req.params.id);
     res.status(200).json({ message: "Theater deleted successfully" });
@@ -44,7 +44,7 @@ export const deleteTheater = async (req: Request, res: Response) => {
 };
 
 // update a theater by id
-export const updateTheater = async (req: Request, res: Response) => {
+export const updateHall = async (req: Request, res: Response) => {
   try {
     await Theater.findByIdAndUpdate(req.params.id, req.body, { new: true });
     res.status(200).json({ message: "Theater updated successfully" });

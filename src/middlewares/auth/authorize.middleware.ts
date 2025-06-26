@@ -1,6 +1,6 @@
 import { Request, Response, NextFunction, RequestHandler } from "express";
 import AppError from "../../utils/AppError";
-import { Role } from "../../models/userModel";
+import { Role } from "../../models/user.model";
 
 const restrictTo = (...allowedRoles: Role[]): RequestHandler => {
   return (req: Request, res: Response, next: NextFunction) => {

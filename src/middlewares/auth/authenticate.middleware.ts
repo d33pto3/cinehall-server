@@ -1,6 +1,6 @@
 import { Request, Response, NextFunction, RequestHandler } from "express";
 import jwt from "jsonwebtoken";
-import { User } from "../../models/userModel";
+import { User } from "../../models/user.model";
 import AppError from "../../utils/AppError";
 
 const authMiddleware: RequestHandler = async (

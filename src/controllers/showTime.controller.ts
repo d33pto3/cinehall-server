@@ -1,8 +1,9 @@
 // ShowtimeController
-import Showtime from "../models/showTimeModel.js";
+import { Request, Response } from "express";
+import Showtime from "../models/showTime.model.js";
 
 // Get all showtimes for a specific movie and theater
-export const getShowtimes = (req, res) => {
+export const getShowtimes = (req: Request, res: Response) => {
   Showtime.find({
     movieId: req.params.movieId,
     theaterId: req.params.theaterId,
