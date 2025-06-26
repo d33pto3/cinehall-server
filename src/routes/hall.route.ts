@@ -8,10 +8,15 @@ import {
   getHalls,
   updateHall,
 } from "../controllers/hall.controller";
+import asyncHandler from "../middlewares/asyncHandler";
 
 // Theater routes
-router.route("/").get(getHalls).post(createHall);
+router.route("/").get(asyncHandler(getHalls)).post(asyncHandler(createHall));
 
-router.route("/:id").get(getHallById).delete(deleteHall).put(updateHall);
+router
+  .route("/:id")
+  .get(asyncHandler(getHallById))
+  .delete(asyncHandler(deleteHall))
+  .put(asyncHandler(updateHall));
 
 export default router;

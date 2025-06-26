@@ -59,7 +59,7 @@ export const firebaseLogin = async (req: Request, res: Response) => {
   }
 
   // Generate a JWT token for your backend
-  const token = createToken(user._id);
+  const token = createToken(user._id, user.role);
 
   res.cookie("token", token, {
     httpOnly: true, // Prevents client-side JS from reading the cookie
@@ -106,7 +106,7 @@ export const register = async (req: Request, res: Response) => {
   });
 
   await user.save();
-  const token = createToken(user._id);
+  const token = createToken(user._id, user.role);
 
   // Save the token in a cookie
   res.cookie("token", token, COOKIE_OPTIONS);
@@ -143,7 +143,7 @@ export const emailPasswordLogin = async (req: Request, res: Response) => {
     throw new AppError("Invalid password", 401);
   }
 
-  const token = createToken(user._id);
+  const token = createToken(user._id, user.role);
 
   // Save the token in a cookie
   res.cookie("token", token, {

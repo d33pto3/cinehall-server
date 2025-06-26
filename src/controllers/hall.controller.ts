@@ -1,54 +1,49 @@
-// TheaterController
+// HallController
 import { Request, Response } from "express";
-import Theater from "../models/hall.model";
+import Hall from "../models/hall.model";
+import AppError from "../utils/AppError";
 
-// Create a new theater
+// Create a new Hall
 export const createHall = async (req: Request, res: Response) => {
-  try {
-    const { name, address, capacity } = req.body;
-    const theater = new Theater({ name, address, capacity });
-    await theater.save();
-    res.status(201).json(theater);
-  } catch (err) {
-    if (err instanceof Error) res.status(400).json({ message: err.message });
-  }
+  const { name, address, capacity } = req.body;
+  const hall = new Hall({ name, address, capacity });
+  await hall.save();
+  res.status(201).json({ message: "Created new hall", data: hall });
 };
 
-export const getHalls = async (req: Request, res: Response) => {
+export const getHalls = async (_req: Request, res: Response) => {
   try {
-    const theaters = await Theater.find();
-    res.status(200).json(theaters);
+    const Halls = await Hall.find();
+    res.status(200).json(Halls);
   } catch (err) {
     if (err instanceof Error) res.status(500).json({ message: err.message });
   }
 };
 
-// get a single theater by id
-export const getHallById = async (req: Request, res: Response) => {
-  try {
-    const theaters = await Theater.findOne();
-    res.status(200).json(theaters);
-  } catch (err) {
-    if (err instanceof Error) res.status(500).json({ message: err.message });
-  }
+// get a single Hall by id
+export const getHallById = async (_req: Request, res: Response) => {
+  const Halls = await Hall.findOne();
+  res.status(200).json(Halls);
 };
 
-// delete a theater by id
+// delete a Hall by id
 export const deleteHall = async (req: Request, res: Response) => {
-  try {
-    await Theater.findByIdAndDelete(req.params.id);
-    res.status(200).json({ message: "Theater deleted successfully" });
-  } catch (err) {
-    if (err instanceof Error) res.status(500).json({ message: err.message });
+  const hall = await Hall.findByIdAndDelete(req.params.id);
+
+  if (!hall) {
+    throw new AppError("Hall not found", 404);
   }
+
+  res.status(200).json({ success: true, message: "Hall deleted successfully" });
 };
 
-// update a theater by id
+// update a Hall by id
 export const updateHall = async (req: Request, res: Response) => {
-  try {
-    await Theater.findByIdAndUpdate(req.params.id, req.body, { new: true });
-    res.status(200).json({ message: "Theater updated successfully" });
-  } catch (err) {
-    if (err instanceof Error) res.status(500).json({ message: err.message });
-  }
+  const updatedHall = await Hall.findByIdAndUpdate(req.params.id, req.body, {
+    new: true,
+  });
+
+  res
+    .status(200)
+    .json({ message: "Hall updated successfully!", data: updatedHall });
 };
