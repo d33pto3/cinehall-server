@@ -1,19 +1,37 @@
 import mongoose from "mongoose";
 const Schema = mongoose.Schema;
 
-const TheaterSchema = new Schema({
-  name: {
-    type: String,
-    required: true,
-  },
-  address: {
-    type: String,
-    required: true,
-  },
-  capacity: {
-    type: Number,
-    required: true,
-  },
-});
+export interface ITheater extends Document {
+  name: string;
+  address: string;
+  capacity: number;
+  createdAt: Date;
+  updatedAt: Date;
+}
 
-export default mongoose.model("Theater", TheaterSchema);
+const theaterSchema = new Schema(
+  {
+    name: {
+      type: String,
+      required: true,
+    },
+    address: {
+      type: String,
+      required: true,
+    },
+    ownerId: {
+      type: Schema.Types.ObjectId,
+      required: true,
+      ref: "User",
+    },
+    screens: {
+      type: [Schema.Types.ObjectId],
+      required: true,
+    },
+  },
+  {
+    timestamps: true,
+  },
+);
+
+export const Theater = mongoose.model<ITheater>("Theater", theaterSchema);

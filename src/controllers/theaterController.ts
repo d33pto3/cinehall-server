@@ -1,12 +1,12 @@
 // TheaterController
 import { Request, Response } from "express";
-import Theater from "../models/theaterModel";
+import { Theater } from "../models/theaterModel";
 
 // Create a new theater
 export const createTheater = async (req: Request, res: Response) => {
   try {
-    const { name, address, capacity } = req.body;
-    const theater = new Theater({ name, address, capacity });
+    const { name, address, ownerId, screens } = req.body;
+    const theater = new Theater({ name, address, ownerId, screens });
     await theater.save();
     res.status(201).json(theater);
   } catch (err) {

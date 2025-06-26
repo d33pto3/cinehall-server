@@ -1,6 +1,6 @@
 // MovieController
 import { Request, Response } from "express";
-import Movie from "../models/movieModle";
+import Movie from "../models/movieModel";
 
 // Get all movies
 export const getMovies = (req: Request, res: Response) => {
