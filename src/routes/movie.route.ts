@@ -6,11 +6,18 @@ import {
   getMovies,
   createMovie,
   getMovieById,
+  updateMovie,
+  deleteMovie,
 } from "../controllers/movie.controller";
+import asyncHandler from "../middlewares/asyncHandler";
 
 // Movie routes
-router.route("/").get(getMovies).post(createMovie);
+router.route("/").get(asyncHandler(getMovies)).post(asyncHandler(createMovie));
 
-router.get("/:id", getMovieById);
+router
+  .route("/:id")
+  .get(asyncHandler(getMovieById))
+  .put(asyncHandler(updateMovie))
+  .delete(asyncHandler(deleteMovie));
 
 export default router;

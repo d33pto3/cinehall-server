@@ -8,33 +8,31 @@ export const createHall = async (req: Request, res: Response) => {
   const { name, address, capacity } = req.body;
   const hall = new Hall({ name, address, capacity });
   await hall.save();
-  res.status(201).json({ message: "Created new hall", data: hall });
+  res
+    .status(201)
+    .json({ success: true, message: "Created new hall", data: hall });
 };
 
 export const getHalls = async (_req: Request, res: Response) => {
-  try {
-    const Halls = await Hall.find();
-    res.status(200).json(Halls);
-  } catch (err) {
-    if (err instanceof Error) res.status(500).json({ message: err.message });
-  }
+  const halls = await Hall.find();
+  res.status(200).json(halls);
 };
 
-// get a single Hall by id
+// Read a single Hall by id
 export const getHallById = async (_req: Request, res: Response) => {
-  const Halls = await Hall.findOne();
-  res.status(200).json(Halls);
+  const hall = await Hall.findOne();
+  res.status(200).json(hall);
 };
 
-// delete a Hall by id
+// Delete a Hall by id
 export const deleteHall = async (req: Request, res: Response) => {
-  const hall = await Hall.findByIdAndDelete(req.params.id);
+  const deletedHall = await Hall.findByIdAndDelete(req.params.id);
 
-  if (!hall) {
+  if (!deletedHall) {
     throw new AppError("Hall not found", 404);
   }
 
-  res.status(200).json({ success: true, message: "Hall deleted successfully" });
+  res.status(200).json({ success: true, message: "Hall deleted!" });
 };
 
 // update a Hall by id
@@ -43,7 +41,13 @@ export const updateHall = async (req: Request, res: Response) => {
     new: true,
   });
 
-  res
-    .status(200)
-    .json({ message: "Hall updated successfully!", data: updatedHall });
+  if (!updatedHall) {
+    throw new AppError("Hall not found", 404);
+  }
+
+  res.status(200).json({
+    success: true,
+    message: "Hall updated successfully!",
+    data: updatedHall,
+  });
 };
