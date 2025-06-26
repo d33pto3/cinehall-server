@@ -1,10 +1,11 @@
 import { Request, Response } from "express";
 import { firebaseAdmin } from "../config/firebase";
-import { User } from "../models/userModel";
+import { User } from "../models/user.model";
 import AppError from "../utils/AppError";
 import { createToken } from "../utils";
 import bcrypt from "bcrypt";
-import jwt from "jsonwebtoken";
+// import { randomBytes } from "crypto";
+// import { sendEmail } from "../utils/emailService";
 
 const COOKIE_EXPIRES_IN = 3 * 24 * 60 * 60 * 1000;
 const COOKIE_OPTIONS = {
@@ -58,7 +59,7 @@ export const firebaseLogin = async (req: Request, res: Response) => {
   }
 
   // Generate a JWT token for your backend
-  const token = createToken(user._id);
+  const token = createToken(user._id, user.role);
 
   res.cookie("token", token, {
     httpOnly: true, // Prevents client-side JS from reading the cookie
@@ -82,8 +83,8 @@ export const firebaseLogin = async (req: Request, res: Response) => {
 };
 
 export const register = async (req: Request, res: Response) => {
-  const { email, password, username, phone } = req.body;
-  console.log(email, password, username, phone);
+  const { email, password, username } = req.body;
+  console.log(email, password, username);
 
   if (!email || !password || !username) {
     throw new AppError("Please provide email, password and name", 400);
@@ -101,12 +102,11 @@ export const register = async (req: Request, res: Response) => {
     email,
     password: hashedPassword,
     username,
-    ...(phone && { phone }),
     role: "user",
   });
 
   await user.save();
-  const token = createToken(user._id);
+  const token = createToken(user._id, user.role);
 
   // Save the token in a cookie
   res.cookie("token", token, COOKIE_OPTIONS);
@@ -143,7 +143,7 @@ export const emailPasswordLogin = async (req: Request, res: Response) => {
     throw new AppError("Invalid password", 401);
   }
 
-  const token = createToken(user._id);
+  const token = createToken(user._id, user.role);
 
   // Save the token in a cookie
   res.cookie("token", token, {
@@ -177,37 +177,37 @@ export const logout = async (req: Request, res: Response): Promise<void> => {
   res.status(200).json({ success: true, message: "Logged out successfully" });
 };
 
-export const authCheck = async (req: Request, res: Response): Promise<void> => {
-  // 1. Get token from cookies
-  const token = req.cookies?.token;
+// TODO
+// export const sendEmailVerification = async (
+//   req: Request,
+//   res: Response,
+// ): Promise<void> => {
+//   const user = await User.findById(req.user?._id);
 
-  if (!token) {
-    throw new AppError("Already logged out", 400);
-  }
+//   if (!user) {
+//     throw new AppError("User not found", 404);
+//   }
 
-  // 2. Verify token
-  const decoded = jwt.verify(token, process.env.JWT_SECRET!) as {
-    _id: string;
-  };
-  console.log(decoded);
+//   if (user.isVerified) {
+//     throw new AppError("Email already verified", 200);
+//   }
 
-  // 3. Fetch user data (simplified example)
-  const user = await User.findById(decoded._id);
+//   // Generate verification token
+//   const token = randomBytes(32).toString("hex");
+//   user.emailVerificationToken = token;
+//   await user.save();
 
-  if (!user) {
-    throw new AppError("User not found", 404);
-  }
+//   const verifyUrl = `${process.env.FRONTEND_URL}/verify-email?token=${token}`;
 
-  // Send the user details back
-  // 4. Return user data
-  res.status(200).json({
-    success: true,
-    user: {
-      _id: user?._id,
-      email: user?.email,
-      username: user?.username,
-      phone: user?.phone,
-      role: user?.role,
-    },
-  });
-};
+//   // Send email
+//   await sendEmail(
+//     user.email,
+//     "Verify your email",
+//     `
+//     <p>Click the link below to verify your email:</p>
+//     <a href="${verifyUrl}">${verifyUrl}</a>
+//   `,
+//   );
+
+//   res.status(200).json({ message: "Verification email sent" });
+// };

@@ -6,8 +6,7 @@ import {
   firebaseLogin,
   register,
   logout,
-  authCheck,
-} from "../controllers/authController";
+} from "../controllers/auth.controller";
 import asyncHandler from "../middlewares/asyncHandler";
 // import authMiddleware from "../middlewares/authMiddleware";
 
@@ -22,7 +21,5 @@ router.post("/login/email", asyncHandler(emailPasswordLogin));
 
 // logout route
 router.post("/logout", asyncHandler(logout));
-
-router.get("/me", asyncHandler(authCheck));
 
 export default router;

@@ -1,6 +1,6 @@
 // BookingController
 import { Request, Response } from "express";
-import Booking from "../models/bookingModel";
+import Booking from "../models/booking.model";
 
 export const getBookingById = async (req: Request, res: Response) => {
   try {
