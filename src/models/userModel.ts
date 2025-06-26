@@ -1,10 +1,10 @@
 import mongoose from "mongoose";
 const Schema = mongoose.Schema;
 
-enum Role {
-  User = "user",
-  Admin = "admin",
-  HallOwner = "hallOwner",
+export enum Role {
+  USER = "user",
+  ADMIN = "admin",
+  HALLOWNER = "hallOwner",
 }
 
 export interface IUser extends Document {

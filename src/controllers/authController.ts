@@ -82,8 +82,8 @@ export const firebaseLogin = async (req: Request, res: Response) => {
 };
 
 export const register = async (req: Request, res: Response) => {
-  const { email, password, username, phone } = req.body;
-  console.log(email, password, username, phone);
+  const { email, password, username } = req.body;
+  console.log(email, password, username);
 
   if (!email || !password || !username) {
     throw new AppError("Please provide email, password and name", 400);
@@ -101,7 +101,6 @@ export const register = async (req: Request, res: Response) => {
     email,
     password: hashedPassword,
     username,
-    ...(phone && { phone }),
     role: "user",
   });
 
@@ -177,6 +176,7 @@ export const logout = async (req: Request, res: Response): Promise<void> => {
   res.status(200).json({ success: true, message: "Logged out successfully" });
 };
 
+// Authentication check
 export const authCheck = async (req: Request, res: Response): Promise<void> => {
   // 1. Get token from cookies
   const token = req.cookies?.token;

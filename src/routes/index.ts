@@ -7,7 +7,7 @@ import bookingRouter from "./booking";
 
 const router = Router();
 
-router.get("/ex", (req, res) => {
+router.get("/ex", (_req, res) => {
   res.json("This is an example route");
 });
 
