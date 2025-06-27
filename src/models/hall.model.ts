@@ -1,7 +1,7 @@
 import mongoose from "mongoose";
 const Schema = mongoose.Schema;
 
-export interface ITheater extends Document {
+export interface IHall extends Document {
   name: string;
   address: string;
   capacity: number;
@@ -9,7 +9,7 @@ export interface ITheater extends Document {
   updatedAt: Date;
 }
 
-const theaterSchema = new Schema(
+const hallSchema = new Schema(
   {
     name: {
       type: String,
@@ -34,4 +34,4 @@ const theaterSchema = new Schema(
   },
 );
 
-export const Theater = mongoose.model<ITheater>("Theater", theaterSchema);
+export const Hall = mongoose.model<IHall>("Theater", hallSchema);

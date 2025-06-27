@@ -8,7 +8,6 @@ const MovieSchema = new Schema({
   },
   imageUrl: {
     type: String,
-    required: true,
   },
   duration: {
     type: Number,
@@ -25,10 +24,6 @@ const MovieSchema = new Schema({
   director: {
     type: String,
     required: true,
-  },
-  createdAt: {
-    type: Date,
-    default: Date.now,
   },
 });
 

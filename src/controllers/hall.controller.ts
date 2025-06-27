@@ -1,6 +1,6 @@
 // HallController
 import { Request, Response } from "express";
-import Hall from "../models/hall.model";
+import { Hall } from "../models/hall.model";
 import AppError from "../utils/AppError";
 
 // Create a new Hall
