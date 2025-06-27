@@ -1,16 +1,23 @@
-import mongoose from "mongoose";
+import mongoose, { ObjectId } from "mongoose";
 const Schema = mongoose.Schema;
 
-const ShowtimeSchema = new Schema(
+interface IShow {
+  movieId: ObjectId;
+  hallId: ObjectId;
+  startTime: Date;
+  endTime: Date;
+}
+
+const showSchema = new Schema<IShow>(
   {
     movieId: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "Movie",
       required: true,
     },
-    theaterId: {
+    hallId: {
       type: mongoose.Schema.Types.ObjectId,
-      ref: "Theater",
+      ref: "Hall",
       required: true,
     },
     startTime: {
@@ -27,4 +34,4 @@ const ShowtimeSchema = new Schema(
   },
 );
 
-export default mongoose.model("Showtime", ShowtimeSchema);
+export const Show = mongoose.model<IShow>("Show", showSchema);

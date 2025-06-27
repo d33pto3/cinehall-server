@@ -7,7 +7,9 @@ import AppError from "../utils/AppError";
 export const getMovies = async (req: Request, res: Response) => {
   const movies = await Movie.find();
 
-  res.status(200).json(movies);
+  res
+    .status(200)
+    .json({ success: true, message: "Fetch all movies", data: movies });
 };
 
 //create a new movie
