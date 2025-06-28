@@ -5,6 +5,7 @@ import hallRouter from "./hall.route";
 import showRouter from "./show.route";
 import bookingRouter from "./booking.route";
 import userRouter from "./user.route";
+import screenRouter from "./screen.route";
 
 const router = Router();
 
@@ -18,5 +19,6 @@ router.use("/movies", movieRouter);
 router.use("/hall", hallRouter);
 router.use("/show", showRouter);
 router.use("/booking", bookingRouter);
+router.use("/screen", screenRouter);
 
 export default router;
