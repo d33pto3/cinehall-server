@@ -3,9 +3,11 @@ const Schema = mongoose.Schema;
 
 interface IShow {
   movieId: ObjectId;
-  hallId: ObjectId;
+  screenId: ObjectId;
   startTime: Date;
   endTime: Date;
+  createdAt: Date;
+  updatedAt: Date;
 }
 
 const showSchema = new Schema<IShow>(
@@ -15,9 +17,9 @@ const showSchema = new Schema<IShow>(
       ref: "Movie",
       required: true,
     },
-    hallId: {
+    screenId: {
       type: mongoose.Schema.Types.ObjectId,
-      ref: "Hall",
+      ref: "Screen",
       required: true,
     },
     startTime: {

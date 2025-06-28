@@ -1,12 +1,12 @@
 // HallController
 import { Request, Response } from "express";
-import { Hall } from "../models/hall.model";
 import AppError from "../utils/AppError";
+import { Hall } from "../models";
 
 // Create a new Hall
 export const createHall = async (req: Request, res: Response) => {
-  const { name, address, capacity } = req.body;
-  const hall = new Hall({ name, address, capacity });
+  const { name, address, capacity, ownerId } = req.body;
+  const hall = new Hall({ name, address, ownerId, capacity });
   await hall.save();
   res
     .status(201)

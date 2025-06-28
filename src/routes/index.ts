@@ -4,6 +4,7 @@ import movieRouter from "./movie.route";
 import hallRouter from "./hall.route";
 import showRouter from "./show.route";
 import bookingRouter from "./booking.route";
+import userRouter from "./user.route";
 
 const router = Router();
 
@@ -12,10 +13,10 @@ router.get("/ex", (_req, res) => {
 });
 
 router.use("/auth", authRouter);
-// router.use("/user", userRouter);
+router.use("/user", userRouter);
 router.use("/movies", movieRouter);
-router.use("/theaters", hallRouter);
+router.use("/hall", hallRouter);
 router.use("/show", showRouter);
-router.use("/bookings", bookingRouter);
+router.use("/booking", bookingRouter);
 
 export default router;

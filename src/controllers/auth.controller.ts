@@ -1,9 +1,9 @@
 import { Request, Response } from "express";
 import { firebaseAdmin } from "../config/firebase";
-import { User } from "../models/user.model";
 import AppError from "../utils/AppError";
 import { createToken } from "../utils";
 import bcrypt from "bcrypt";
+import { User } from "../models";
 // import { randomBytes } from "crypto";
 // import { sendEmail } from "../utils/emailService";
 
@@ -84,7 +84,6 @@ export const firebaseLogin = async (req: Request, res: Response) => {
 
 export const register = async (req: Request, res: Response) => {
   const { email, password, username } = req.body;
-  console.log(email, password, username);
 
   if (!email || !password || !username) {
     throw new AppError("Please provide email, password and name", 400);

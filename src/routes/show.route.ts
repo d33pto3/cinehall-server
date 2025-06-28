@@ -1,10 +1,21 @@
 // import express from 'express';
 import express from "express";
 import asyncHandler from "../middlewares/asyncHandler";
-import { getShows } from "../controllers/show.controller";
+import {
+  getShowById,
+  getShows,
+  updateShow,
+  deleteShow,
+} from "../controllers/show.controller";
 const router = express.Router();
 
 // Showtime routes
 router.route("/").get(asyncHandler(getShows));
+
+router
+  .route("/:id")
+  .get(asyncHandler(getShowById))
+  .put(asyncHandler(updateShow))
+  .delete(asyncHandler(deleteShow));
 
 export default router;

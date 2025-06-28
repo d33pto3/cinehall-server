@@ -1,10 +1,10 @@
-import mongoose from "mongoose";
+import mongoose, { ObjectId } from "mongoose";
 const Schema = mongoose.Schema;
 
 export interface IHall extends Document {
   name: string;
   address: string;
-  capacity: number;
+  ownerId: ObjectId;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -21,11 +21,7 @@ const hallSchema = new Schema(
     },
     ownerId: {
       type: Schema.Types.ObjectId,
-      required: true,
       ref: "User",
-    },
-    screens: {
-      type: [Schema.Types.ObjectId],
       required: true,
     },
   },
@@ -34,4 +30,4 @@ const hallSchema = new Schema(
   },
 );
 
-export const Hall = mongoose.model<IHall>("Theater", hallSchema);
+export const Hall = mongoose.model<IHall>("Hall", hallSchema);

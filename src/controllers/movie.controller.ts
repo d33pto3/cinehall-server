@@ -1,7 +1,7 @@
 // MovieController
 import { Request, Response } from "express";
-import Movie from "../models/movie.modle";
 import AppError from "../utils/AppError";
+import { Movie } from "../models";
 
 // Get all movies
 export const getMovies = async (req: Request, res: Response) => {
@@ -15,6 +15,10 @@ export const getMovies = async (req: Request, res: Response) => {
 //create a new movie
 export const createMovie = async (req: Request, res: Response) => {
   const { title, duration, genre, director, releaseDate, imageUrl } = req.body;
+
+  if (!title || !duration || !genre || !releaseDate || !director) {
+    throw new AppError("Please provide all the fields", 400);
+  }
 
   const movie = new Movie({
     title,
@@ -51,7 +55,9 @@ export const deleteMovie = async (req: Request, res: Response) => {
     throw new AppError("Movie not found!", 404);
   }
 
-  res.status(200).json({ success: "true", message: "Movie deleted!" });
+  res
+    .status(200)
+    .json({ success: "true", message: "Movie deleted!", data: deleteMovie });
 };
 
 // update a Hall by id
