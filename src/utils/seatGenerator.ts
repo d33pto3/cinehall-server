@@ -1,0 +1,25 @@
+import mongoose from "mongoose";
+import { Seat } from "../models/seat.model";
+
+export const generateSeats = async (
+  screenId: mongoose.Types.ObjectId,
+  rows: number,
+  columns: number,
+) => {
+  const seats = [];
+
+  for (let i = 0; i < rows; i++) {
+    const rowChar = String.fromCharCode(65 + i);
+
+    for (let j = 0; j <= columns; j++) {
+      seats.push({
+        screenId,
+        seatNumber: `${rowChar}${j}`,
+        row: rowChar,
+        column: j,
+      });
+    }
+  }
+
+  await Seat.insertMany(seats);
+};

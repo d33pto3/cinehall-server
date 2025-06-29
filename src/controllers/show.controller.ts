@@ -13,6 +13,7 @@ export const getShows = async (req: Request, res: Response) => {
 };
 
 export const getShowById = async (req: Request, res: Response) => {
+  console.log(req.params.id);
   const show = await Show.findById(req.params.id);
 
   if (!show) {
@@ -40,12 +41,18 @@ export const createShow = async (req: Request, res: Response) => {
     throw new AppError("Invalid start time or end time format", 400);
   }
 
+  if (startTime > endTime) {
+    throw new AppError("End time cannot be greter than Start time", 400);
+  }
+
   const show = new Show({
     movieId,
     screenId,
     startTime,
     endTime,
   });
+
+  await show.save();
 
   res
     .status(201)

@@ -6,11 +6,12 @@ import {
   getShows,
   updateShow,
   deleteShow,
+  createShow,
 } from "../controllers/show.controller";
 const router = express.Router();
 
 // Showtime routes
-router.route("/").get(asyncHandler(getShows));
+router.route("/").get(asyncHandler(getShows)).post(asyncHandler(createShow));
 
 router
   .route("/:id")

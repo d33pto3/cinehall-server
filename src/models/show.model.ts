@@ -1,7 +1,7 @@
-import mongoose, { ObjectId } from "mongoose";
+import mongoose, { Document, ObjectId } from "mongoose";
 const Schema = mongoose.Schema;
 
-interface IShow {
+interface IShow extends Document {
   movieId: ObjectId;
   screenId: ObjectId;
   startTime: Date;

@@ -4,7 +4,7 @@ import AppError from "../utils/AppError";
 import { Movie } from "../models";
 
 // Get all movies
-export const getMovies = async (req: Request, res: Response) => {
+export const getMovies = async (_req: Request, res: Response) => {
   const movies = await Movie.find();
 
   res
