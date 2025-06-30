@@ -9,7 +9,10 @@ export const generateSeats = async (
   const seats = [];
 
   for (let i = 0; i < rows; i++) {
-    const rowChar = String.fromCharCode(65 + i);
+    let rowChar = String.fromCharCode(65 + i);
+    if (i > 26) {
+      rowChar += String.fromCharCode(65 + i - 26);
+    }
 
     for (let j = 0; j <= columns; j++) {
       seats.push({

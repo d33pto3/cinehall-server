@@ -6,3 +6,4 @@ export { Movie } from "./movie.modle";
 export { Show } from "./show.model";
 export { User } from "./user.model";
 export { Screen } from "./screen.model";
+export { Seat } from "./seat.model";
