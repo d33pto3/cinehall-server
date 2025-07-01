@@ -1,4 +1,5 @@
 import mongoose, { Document, ObjectId } from "mongoose";
+import { SeatStatus } from "../types/enums";
 const Scheam = mongoose.Schema;
 
 interface ISeat extends Document {
@@ -6,6 +7,7 @@ interface ISeat extends Document {
   seatNumber: string;
   row: string;
   column: number;
+  status?: SeatStatus;
 }
 
 const seatSchema = new Scheam<ISeat>({
@@ -25,6 +27,11 @@ const seatSchema = new Scheam<ISeat>({
   column: {
     type: Number,
     required: true,
+  },
+  status: {
+    type: String,
+    enum: SeatStatus,
+    default: SeatStatus.AVAILABLE,
   },
 });
 

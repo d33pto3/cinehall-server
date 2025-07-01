@@ -1,15 +1,16 @@
 import mongoose, { ObjectId } from "mongoose";
-import { paymentStatus, paymentMethod } from "../types/enums";
+import { PaymentStatus, PaymentMethod } from "../types/enums";
 const Schema = mongoose.Schema;
 
 interface IBooking extends Document {
   userId: ObjectId;
   showId: ObjectId;
   screenId: ObjectId;
+  movieId: ObjectId;
   seats: ObjectId[];
   totalPrice: number;
-  paymentStatus: paymentStatus;
-  paymentMethod?: paymentMethod;
+  paymentStatus: PaymentStatus;
+  paymentMethod?: PaymentMethod;
   isCancelled: boolean;
 }
 
@@ -29,6 +30,11 @@ const BookingSchema = new Schema<IBooking>({
     ref: "Show",
     required: true,
   },
+  movieId: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: "Movie",
+    required: true,
+  },
   seats: [
     {
       type: mongoose.Schema.Types.ObjectId,
@@ -42,15 +48,16 @@ const BookingSchema = new Schema<IBooking>({
   },
   paymentStatus: {
     type: String,
-    enum: Object.values(paymentStatus),
+    enum: Object.values(PaymentStatus),
     required: true,
   },
   paymentMethod: {
     type: String,
-    enum: Object.values(paymentMethod),
+    enum: Object.values(PaymentMethod),
   },
   isCancelled: {
     type: Boolean,
+    default: false,
   },
 });
 

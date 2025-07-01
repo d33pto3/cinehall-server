@@ -6,8 +6,7 @@ interface IShow extends Document {
   screenId: ObjectId;
   startTime: Date;
   endTime: Date;
-  createdAt: Date;
-  updatedAt: Date;
+  basePrice: number;
 }
 
 const showSchema = new Schema<IShow>(
@@ -29,6 +28,11 @@ const showSchema = new Schema<IShow>(
     endTime: {
       type: Date,
       required: true,
+    },
+    basePrice: {
+      type: Number,
+      required: true,
+      min: [1, "Base price must be greater than 0"],
     },
   },
   {

@@ -1,6 +1,15 @@
 import mongoose from "mongoose";
 import { Seat } from "../models/seat.model";
 
+function getRowLabel(index: number): string {
+  let label = "";
+  while (index >= 0) {
+    label = String.fromCharCode((index % 26) + 65) + label;
+    index = Math.floor(index / 26) - 1;
+  }
+  return label;
+}
+
 export const generateSeats = async (
   screenId: mongoose.Types.ObjectId,
   rows: number,
@@ -9,12 +18,9 @@ export const generateSeats = async (
   const seats = [];
 
   for (let i = 0; i < rows; i++) {
-    let rowChar = String.fromCharCode(65 + i);
-    if (i > 26) {
-      rowChar += String.fromCharCode(65 + i - 26);
-    }
+    const rowChar = getRowLabel(i);
 
-    for (let j = 0; j <= columns; j++) {
+    for (let j = 0; j < columns; j++) {
       seats.push({
         screenId,
         seatNumber: `${rowChar}${j}`,

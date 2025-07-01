@@ -1,11 +1,13 @@
 import mongoose, { ObjectId } from "mongoose";
 const Schema = mongoose.Schema;
+import { autoIncrement } from "mongoose-plugin-autoinc";
 
+// 1 ticket = 1 seat
 interface ITicket extends Document {
   bookingId: ObjectId;
   userId: ObjectId;
   showId: ObjectId;
-  seats: string[];
+  seat: ObjectId;
   ticketId: number;
   qrCodeUrl: string;
 }
@@ -26,16 +28,23 @@ const ticketSchema = new Schema<ITicket>({
     ref: "Show",
     required: true,
   },
-  seats: [
-    {
-      type: String,
-      required: true,
-    },
-  ],
+  seat: {
+    type: String,
+    required: true,
+  },
   ticketId: {
     type: Number,
+    required: true,
+    unique: true,
   },
   qrCodeUrl: String,
+});
+
+ticketSchema.plugin(autoIncrement, {
+  field: "ticketId",
+  startAt: 100000,
+  incrementBy: 1,
+  modelName: "Ticket",
 });
 
 export const Ticket = mongoose.model<ITicket>("Ticket", ticketSchema);
