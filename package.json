@@ -29,6 +29,7 @@
     "next": "^15.2.4",
     "nodemailer": "^7.0.3",
     "qrcode": "^1.5.4",
+    "sslcommerz": "^1.7.0",
     "sslcommerz-lts": "^1.1.0"
   },
   "devDependencies": {

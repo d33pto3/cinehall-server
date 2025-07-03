@@ -2,13 +2,15 @@ import QRCode from "qrcode";
 
 export const generateQrCode = async (
   ticketId: string,
-  seats: string[],
+  seatId: string,
   showId: string,
+  userId: string,
 ) => {
   const data = JSON.stringify({
     ticketId,
-    seats,
+    seatId,
     showId,
+    userId,
   });
 
   try {

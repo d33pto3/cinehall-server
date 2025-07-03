@@ -7,6 +7,7 @@ import {
   updateBooking,
   deleteBooking,
   getBookingById,
+  initiatePayment,
 } from "../controllers/booking.controller";
 import asyncHandler from "../middlewares/asyncHandler";
 
@@ -21,5 +22,7 @@ router
   .get(asyncHandler(getBookingById))
   .put(asyncHandler(updateBooking))
   .delete(asyncHandler(deleteBooking));
+
+router.post("/initiate/:bookingId", asyncHandler(initiatePayment));
 
 export default router;

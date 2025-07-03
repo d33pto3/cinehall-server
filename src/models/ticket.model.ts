@@ -7,9 +7,9 @@ interface ITicket extends Document {
   bookingId: ObjectId;
   userId: ObjectId;
   showId: ObjectId;
-  seat: ObjectId;
+  seatId: ObjectId;
   ticketId: number;
-  qrCodeUrl: string;
+  qrCode: string;
 }
 
 const ticketSchema = new Schema<ITicket>({
@@ -28,8 +28,9 @@ const ticketSchema = new Schema<ITicket>({
     ref: "Show",
     required: true,
   },
-  seat: {
-    type: String,
+  seatId: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: "Seat",
     required: true,
   },
   ticketId: {
@@ -37,14 +38,14 @@ const ticketSchema = new Schema<ITicket>({
     required: true,
     unique: true,
   },
-  qrCodeUrl: String,
+  qrCode: String,
 });
 
 ticketSchema.plugin(autoIncrement, {
+  model: "Ticket",
   field: "ticketId",
   startAt: 100000,
   incrementBy: 1,
-  modelName: "Ticket",
 });
 
 export const Ticket = mongoose.model<ITicket>("Ticket", ticketSchema);

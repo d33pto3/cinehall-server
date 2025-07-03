@@ -4,6 +4,8 @@ import { Booking, Movie, Screen, Seat, Show, User } from "../models";
 import AppError from "../utils/AppError";
 import mongoose from "mongoose";
 import { PaymentStatus } from "../types/enums";
+import { SslCommerzPayment } from "sslcommerz";
+import { preaparePaymentData } from "../utils/preparePaymentData";
 
 const ObjectId = mongoose.Types.ObjectId;
 
@@ -104,4 +106,47 @@ export const updateBooking = async (req: Request, res: Response) => {
 
 export const deleteBooking = async (req: Request, res: Response) => {
   res.json({});
+};
+
+export const initiatePayment = async (req: Request, res: Response) => {
+  const { bookingId } = req.params;
+
+  const booking = await Booking.findById(bookingId);
+
+  if (!booking) {
+    throw new AppError("Booking not found!", 404);
+  }
+
+  const user = await User.findById(booking.userId);
+
+  if (!user) {
+    throw new AppError("User not found!", 404);
+  }
+
+  const paymentData = preaparePaymentData(booking, user);
+
+  const sslcommerz = new SslCommerzPayment(
+    process.env.SSLC_STORE_ID,
+    process.env.SSLC_STORE_PASSWORD,
+    false,
+  );
+
+  const apiResponse = await sslcommerz.init(paymentData);
+
+  if (apiResponse.data?.status === "FAILED") {
+    console.log(apiResponse.data?.failedReason);
+    throw new AppError("There was an error during payment", 400);
+  }
+
+  booking.tran_id = paymentData.tran_id;
+
+  await booking.save();
+
+  const GatewayPageURL = apiResponse.GatewayPageURL;
+
+  res.status(200).json({
+    success: true,
+    message: "Redirect to payment gateway",
+    url: GatewayPageURL,
+  });
 };
