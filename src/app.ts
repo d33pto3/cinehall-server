@@ -36,7 +36,7 @@ Middlewares
 ==============================*/
 app.use(
   cors({
-    origin: ["http://localhost:3000", ""],
+    origin: ["http://localhost:3000", "http://localhost:8081"],
     credentials: true,
   }),
 );

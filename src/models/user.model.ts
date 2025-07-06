@@ -46,6 +46,7 @@ const userSchema = new Schema<IUser>(
     password: {
       type: String,
       trim: true,
+      select: false, // Don't expose passwords by default
     },
     role: {
       type: String,

@@ -129,14 +129,20 @@ export const emailPasswordLogin = async (req: Request, res: Response) => {
     throw new AppError("Please provide email and password", 400);
   }
 
-  const user = await User.findOne({ email });
+  const user = await User.findOne({ email }).select("+password");
+
+  console.log(user);
 
   if (!user) {
     throw new AppError("User not found", 404);
   }
 
+  if (!user.password) {
+    throw new AppError("Login with gmail or set password!", 400);
+  }
+
   // Compare passwords
-  const isMatch = await bcrypt.compare(password, user.password!);
+  const isMatch = await bcrypt.compare(password, user.password);
 
   if (!isMatch) {
     throw new AppError("Invalid password", 401);
