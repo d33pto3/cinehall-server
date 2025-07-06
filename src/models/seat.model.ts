@@ -8,6 +8,9 @@ interface ISeat extends Document {
   row: string;
   column: number;
   status?: SeatStatus;
+  heldBy: ObjectId;
+  isHeld: boolean;
+  heldUntil: Date;
 }
 
 const seatSchema = new Scheam<ISeat>({
@@ -32,6 +35,19 @@ const seatSchema = new Scheam<ISeat>({
     type: String,
     enum: SeatStatus,
     default: SeatStatus.AVAILABLE,
+  },
+  heldBy: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: "User",
+    default: null,
+  },
+  isHeld: {
+    type: Boolean,
+    default: false,
+  },
+  heldUntil: {
+    type: Date,
+    default: null,
   },
 });
 

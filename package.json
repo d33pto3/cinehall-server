@@ -27,6 +27,7 @@
     "mongoose": "^7.0.0",
     "mongoose-plugin-autoinc": "^1.1.9",
     "next": "^15.2.4",
+    "node-cron": "^4.2.0",
     "nodemailer": "^7.0.3",
     "qrcode": "^1.5.4",
     "sslcommerz": "^1.7.0",

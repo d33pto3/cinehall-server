@@ -1,22 +1,14 @@
 import mongoose, { ObjectId } from "mongoose";
 import { PaymentStatus, PaymentMethod } from "../types/enums";
+import { IPayment as IPaymentDetails } from "./payment.model";
 const Schema = mongoose.Schema;
 
-interface IPaymentDetails {
-  val_id: string;
-  card_type: string;
-  currency: string;
-  tran_date: string;
-  card_issuer: string;
-  card_brand: string;
-  card_issuer_country: string;
-  card_issuer_country_code: string;
-}
 export interface IBooking extends Document {
   userId: ObjectId;
   showId: ObjectId;
   screenId: ObjectId;
   movieId: ObjectId;
+  paymentId: ObjectId;
   seats: ObjectId[];
   totalPrice: number;
   paymentStatus: PaymentStatus;
@@ -73,15 +65,9 @@ const BookingSchema = new Schema<IBooking>(
       default: false,
     },
     tran_id: String,
-    paymentDetials: {
-      val_id: String,
-      card_type: String,
-      currency: String,
-      tran_date: String,
-      card_issuer: String,
-      card_brand: String,
-      card_issuer_country: String,
-      card_issuer_country_code: String,
+    paymentId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Payment",
     },
   },
   {

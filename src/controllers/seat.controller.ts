@@ -2,6 +2,8 @@ import { Request, Response } from "express";
 import mongoose from "mongoose";
 import AppError from "../utils/AppError";
 import { Screen, Seat } from "../models";
+import cron from "node-cron";
+
 const ObjectId = mongoose.Types.ObjectId;
 
 export const createSeatsByScreenId = async (req: Request, res: Response) => {
@@ -58,7 +60,13 @@ export const getSeatsByScreenId = async (req: Request, res: Response) => {
 };
 
 export const updateSeat = async (req: Request, res: Response) => {
-  const updatedSeat = await Seat.findByIdAndUpdate(req.params.id, req.body, {
+  const id = req.params.id;
+
+  if (!ObjectId.isValid(id)) {
+    throw new AppError("Invalid Seat!", 400);
+  }
+
+  const updatedSeat = await Seat.findByIdAndUpdate(id, req.body, {
     new: true,
   });
 
@@ -74,7 +82,13 @@ export const updateSeat = async (req: Request, res: Response) => {
 };
 
 export const deleteSeat = async (req: Request, res: Response) => {
-  const deletedSeat = await Seat.findByIdAndDelete(req.params.id);
+  const id = req.params.id;
+
+  if (!ObjectId.isValid(id)) {
+    throw new AppError("Invalid Seat!", 400);
+  }
+
+  const deletedSeat = await Seat.findByIdAndDelete(id);
 
   if (!deletedSeat) {
     throw new AppError("Seat not found!", 400);
@@ -86,3 +100,63 @@ export const deleteSeat = async (req: Request, res: Response) => {
     data: deletedSeat,
   });
 };
+
+export const holdSeat = async (req: Request, res: Response) => {
+  const id = req.params.id;
+  const { userId } = req.body;
+
+  if (!ObjectId.isValid(id)) {
+    throw new AppError("Invalid Seat!", 400);
+  }
+
+  const seat = await Seat.findByIdAndUpdate(id, {
+    isHeld: true,
+    heldBy: userId,
+    heldUntil: new Date(Date.now() + 5 * 60 * 1000),
+  });
+
+  if (!seat) {
+    throw new AppError("Seat not found", 404);
+  }
+
+  res.status(200).json({
+    success: true,
+    message: `Seat ${seat.seatNumber} unblocked!`,
+    data: seat,
+  });
+};
+
+export const releaseSeat = async (req: Request, res: Response) => {
+  const id = req.params.id;
+
+  if (!ObjectId.isValid(id)) {
+    throw new AppError("Invalid Seat!", 400);
+  }
+
+  const seat = await Seat.findByIdAndUpdate(id, {
+    isHeld: false,
+    heldBy: null,
+    heldUntil: null,
+  });
+
+  if (!seat) {
+    throw new AppError("Seat not found", 404);
+  }
+
+  res.status(200).json({
+    success: true,
+    message: `Seat ${seat.seatNumber} unblocked!`,
+    data: seat,
+  });
+};
+
+cron.schedule("*/1 * * * *", async () => {
+  console.log("Checking for expired held seats");
+
+  await Seat.updateMany(
+    { isHeld: true, heldUntil: { $lt: new Date() } },
+    { $set: { isHeld: false, heldBy: null, heldUntil: null } },
+  );
+
+  console.log("expired seats released");
+});

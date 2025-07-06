@@ -1,7 +1,7 @@
 import { Request, Response } from "express";
-import { Booking } from "../models";
+import { Booking, Payment, Seat } from "../models";
 import AppError from "../utils/AppError";
-import { PaymentStatus } from "../types/enums";
+import { PaymentStatus, SeatStatus } from "../types/enums";
 import { generateQrCode } from "../utils/qrCodeGenerator";
 import { Ticket } from "../models/ticket.model";
 
@@ -18,17 +18,14 @@ export const paymentSuccessHandler = async (req: Request, res: Response) => {
     card_issuer_country_code,
   } = req.body;
 
-  console.log(tran_id);
-
   const booking = await Booking.findOne({ tran_id });
 
   if (!booking) {
     throw new AppError("Booking not found for this transaction!", 404);
   }
 
-  // Update payment status and store details
-  booking.paymentStatus = PaymentStatus.PAID;
-  booking.paymentDetials = {
+  await Payment.create({
+    userId: booking.userId,
     val_id,
     card_type,
     currency,
@@ -37,11 +34,27 @@ export const paymentSuccessHandler = async (req: Request, res: Response) => {
     card_brand,
     card_issuer_country,
     card_issuer_country_code,
-  };
+  });
 
+  // Update payment status and store details
+  booking.paymentStatus = PaymentStatus.PAID;
   await booking.save();
 
   for (const seatId of booking.seats) {
+    const seat = await Seat.findOne({
+      _id: seatId,
+      isHeld: true,
+      heldBy: booking.userId,
+      heldUntil: { $gte: new Date() },
+    });
+
+    if (!seat) {
+      throw new AppError("This seat is taken!", 404);
+    }
+
+    seat.status = SeatStatus.BOOKED;
+    await seat.save();
+
     const ticketData = {
       bookingId: booking._id,
       userId: booking.userId,

@@ -38,7 +38,7 @@ export const preaparePaymentData = (
   success_url: `${SSLCOMMERZ_BASE_URL}/payment/success`,
   fail_url: `${SSLCOMMERZ_BASE_URL}/payment/fail`,
   cancel_url: `${SSLCOMMERZ_BASE_URL}/payment/cancel`,
-  ipn_url: `http://localhost:8000/payment/ipn`,
+  ipn_url: `${SSLCOMMERZ_BASE_URL}payment/ipn`,
   product_name: PRODUCT_DETAILS.name,
   product_category: PRODUCT_DETAILS.category,
   product_profile: PRODUCT_DETAILS.profile,
