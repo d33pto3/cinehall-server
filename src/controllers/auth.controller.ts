@@ -4,15 +4,14 @@ import AppError from "../utils/AppError";
 import { createToken } from "../utils";
 import bcrypt from "bcrypt";
 import { User } from "../models";
-// import { randomBytes } from "crypto";
-// import { sendEmail } from "../utils/emailService";
+import jwt from "jsonwebtoken";
 
 const COOKIE_EXPIRES_IN = 3 * 24 * 60 * 60 * 1000;
 const COOKIE_OPTIONS = {
   httpOnly: true,
   secure: process.env.NODE_ENV === "production",
   maxAge: COOKIE_EXPIRES_IN,
-  sameSite: "strict" as const,
+  sameSite: "lax" as const,
 };
 
 // Helper function to format user response
@@ -23,6 +22,33 @@ const COOKIE_OPTIONS = {
 //   ...(user.role && { role: user.role }),
 //   ...(user.phone && { phone: user.phone }),
 // });
+
+export const getUser = async (req: Request, res: Response) => {
+  const token = req.cookies.token;
+
+  if (!token) {
+    throw new AppError("Not authenticated", 401);
+  }
+
+  const decoded = jwt.verify(token, process.env.JWT_SECRET!) as {
+    _id: string;
+  };
+
+  const user = await User.findById(decoded._id);
+
+  if (!user) {
+    throw new AppError("User not found", 404);
+  }
+
+  res.status(200).json({
+    _id: user.id,
+    email: user.email,
+    username: user.username,
+    role: user.role,
+    phone: user?.phone,
+    avatar: user?.avatar,
+  });
+};
 
 export const firebaseLogin = async (req: Request, res: Response) => {
   const { idToken } = req.body;
@@ -155,7 +181,10 @@ export const emailPasswordLogin = async (req: Request, res: Response) => {
     httpOnly: true,
     secure: process.env.NODE_ENV === "production",
     maxAge: COOKIE_EXPIRES_IN,
-    sameSite: "strict",
+    sameSite: "lax",
+    path: "/",
+    domain:
+      process.env.NODE_ENV === "production" ? ".yourdomain.com" : "localhost", // Adjust for dev/prod
   });
 
   res.status(200).json({

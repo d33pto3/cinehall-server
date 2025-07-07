@@ -6,9 +6,12 @@ import {
   firebaseLogin,
   register,
   logout,
+  getUser,
 } from "../controllers/auth.controller";
 import asyncHandler from "../middlewares/asyncHandler";
 // import authMiddleware from "../middlewares/authMiddleware";
+
+router.get("/me", asyncHandler(getUser));
 
 // Firebase login route
 router.post("/login/firebase", asyncHandler(firebaseLogin));
