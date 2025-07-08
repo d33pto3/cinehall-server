@@ -1,7 +1,17 @@
 // HallController
 import { Request, Response } from "express";
 import AppError from "../utils/AppError";
-import { Hall } from "../models";
+import { Hall, Screen } from "../models";
+
+interface IHallWithOwner extends Document {
+  _id: string;
+  name: string;
+  address: string;
+  ownerId: {
+    _id: string;
+    username: string;
+  };
+}
 
 // Create a new Hall
 export const createHall = async (req: Request, res: Response) => {
@@ -11,6 +21,35 @@ export const createHall = async (req: Request, res: Response) => {
   res
     .status(201)
     .json({ success: true, message: "Created new hall", data: hall });
+};
+
+export const getHallsWithMetaForAdmin = async (req: Request, res: Response) => {
+  // Fetch all halls and populate the owner's username
+  const halls = await Hall.find().populate("ownerId", "username");
+
+  const hallData = await Promise.all(
+    halls.map(async (hall) => {
+      const screenCount = await Screen.countDocuments({ hallId: hall._id });
+
+      console.log(screenCount);
+
+      const owner = (hall as unknown as IHallWithOwner).ownerId;
+
+      return {
+        _id: hall._id,
+        name: hall.name,
+        address: hall.address,
+        screens: screenCount,
+        owner: owner?.username || null,
+      };
+    }),
+  );
+
+  res.status(200).json({
+    success: true,
+    message: "Fetched halls!",
+    data: hallData,
+  });
 };
 
 export const getHalls = async (_req: Request, res: Response) => {
