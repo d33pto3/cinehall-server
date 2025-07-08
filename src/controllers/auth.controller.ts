@@ -40,6 +40,8 @@ export const getUser = async (req: Request, res: Response) => {
     throw new AppError("User not found", 404);
   }
 
+  console.log(user);
+
   res.status(200).json({
     _id: user.id,
     email: user.email,
