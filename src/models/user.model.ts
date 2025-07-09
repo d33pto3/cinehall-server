@@ -68,7 +68,10 @@ const userSchema = new Schema<IUser>(
     isVerified: {
       type: Boolean,
     },
-    emailVerificationToken: String,
+    emailVerificationToken: {
+      type: String,
+      select: false,
+    },
   },
   {
     timestamps: true,

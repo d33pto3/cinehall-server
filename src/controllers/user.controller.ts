@@ -1,10 +1,24 @@
 import { Request, Response } from "express";
 import { User } from "../models";
 import AppError from "../utils/AppError";
+import { Role } from "../models/user.model";
 
-export const getUsers = async (_req: Request, res: Response) => {
-  const users = await User.find({});
-  res.status(201).json({
+export const getUsers = async (req: Request, res: Response) => {
+  const { role } = req.query;
+
+  let query = {};
+
+  if (role && Object.values(Role).includes(role as Role)) {
+    query = { role };
+  } else {
+    throw new AppError("This role does not exist", 404);
+  }
+
+  const users = await User.find(query).select(
+    "-password -emailVerificationToken",
+  );
+
+  res.status(200).json({
     success: true,
     message: "User fetched successfully!",
     data: users,

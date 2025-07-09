@@ -2,7 +2,7 @@ import { Request, Response } from "express";
 import mongoose from "mongoose";
 import AppError from "../utils/AppError";
 import { Screen, Seat } from "../models";
-import cron from "node-cron";
+// import cron from "node-cron";
 
 const ObjectId = mongoose.Types.ObjectId;
 
@@ -150,13 +150,13 @@ export const releaseSeat = async (req: Request, res: Response) => {
   });
 };
 
-cron.schedule("*/1 * * * *", async () => {
-  console.log("Checking for expired held seats");
+// cron.schedule("*/1 * * * *", async () => {
+//   console.log("Checking for expired held seats");
 
-  await Seat.updateMany(
-    { isHeld: true, heldUntil: { $lt: new Date() } },
-    { $set: { isHeld: false, heldBy: null, heldUntil: null } },
-  );
+//   await Seat.updateMany(
+//     { isHeld: true, heldUntil: { $lt: new Date() } },
+//     { $set: { isHeld: false, heldBy: null, heldUntil: null } },
+//   );
 
-  console.log("expired seats released");
-});
+//   console.log("expired seats released");
+// });
