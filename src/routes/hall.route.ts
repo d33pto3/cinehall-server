@@ -6,12 +6,15 @@ import {
   deleteHall,
   getHallById,
   getHalls,
+  getHallsWithMetaForAdmin,
   updateHall,
 } from "../controllers/hall.controller";
 import asyncHandler from "../middlewares/asyncHandler";
 
 // Theater routes
 router.route("/").get(asyncHandler(getHalls)).post(asyncHandler(createHall));
+
+router.get("/admin", asyncHandler(getHallsWithMetaForAdmin));
 
 router
   .route("/:id")
