@@ -3,7 +3,8 @@ import { Request, Response } from "express";
 import AppError from "../utils/AppError";
 import { Hall, Screen } from "../models";
 import { IHall } from "../models/hall.model";
-import { FilterQuery } from "mongoose";
+import { buildSearchQuery } from "../utils/searchQueryBuilder";
+import { paginate } from "../utils/paginate";
 
 interface IHallWithOwner extends Document {
   _id: string;
@@ -28,23 +29,25 @@ export const createHall = async (req: Request, res: Response) => {
 
 export const getHallsWithMetaForAdmin = async (req: Request, res: Response) => {
   const search = req.query.search as string;
+  const page = parseInt(req.query.page as string) || 1;
+  const limit = parseInt(req.query.page as string) || 10;
 
-  const query: FilterQuery<IHall> = {};
+  // Build dynamic search query
+  const filter = buildSearchQuery<IHall>(search, ["name", "address"]);
 
-  if (search) {
-    // Case-insensitive partial match on name or address
-    query.$or = [
-      { name: { $regex: search, $options: "i" } },
-      { address: { $regex: search, $options: "i" } },
-    ];
-  }
+  const paginatedResult = await paginate(Hall, {
+    page,
+    limit,
+    filter,
+    populate: { path: "ownerId", select: "username" },
+  });
 
-  const halls = await Hall.find(query).populate("ownerId", "username");
+  // const halls = await Hall.find(filter).populate("ownerId", "username");
 
-  const hallData = await Promise.all(
-    halls.map(async (hall) => {
+  // Enhance result with screen counts and owner usernames
+  const enrichedData = await Promise.all(
+    paginatedResult.data.map(async (hall) => {
       const screenCount = await Screen.countDocuments({ hallId: hall._id });
-
       const owner = (hall as unknown as IHallWithOwner).ownerId;
 
       return {
@@ -60,8 +63,11 @@ export const getHallsWithMetaForAdmin = async (req: Request, res: Response) => {
   res.status(200).json({
     success: true,
     message: "Fetched halls!",
-    count: hallData?.length,
-    data: hallData,
+    // count: enrichedData?.length,
+    pages: paginatedResult.pages,
+    page: paginatedResult.page,
+    count: paginatedResult.total,
+    data: enrichedData,
   });
 };
 
