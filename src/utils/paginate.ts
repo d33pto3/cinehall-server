@@ -95,17 +95,34 @@ export const paginate = async <T extends Document>(
     }
   }
 
+  //   if (populate) {
+  //   if (Array.isArray(populate)) {
+  //     query.populate(populate.map(p =>
+  //       typeof p === 'string' ? { path: p } : p
+  //     ));
+  //   } else {
+  //     query.populate(
+  //       typeof populate === 'string'
+  //         ? { path: populate }
+  //         : populate
+  //     );
+  //   }
+  // }
+
   // both of query execution and counting total are async task. Promise.all() is used so that one of this doesn't stop for the other. When both of these are finished we get the result back
   const [data, total] = await Promise.all([
     query.exec(), // execute query
     model.countDocuments(filter), // count total
   ]);
 
+  // Calculate page count safely
+  const pageCount = limit > 0 ? Math.ceil(total / limit) : total > 0 ? 1 : 0;
+
   return {
     data,
     total,
     page,
-    pages: Math.ceil(total / limit),
+    pages: pageCount,
     limit,
   };
 };

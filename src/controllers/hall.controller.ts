@@ -30,7 +30,9 @@ export const createHall = async (req: Request, res: Response) => {
 export const getHallsWithMetaForAdmin = async (req: Request, res: Response) => {
   const search = req.query.search as string;
   const page = parseInt(req.query.page as string) || 1;
-  const limit = parseInt(req.query.page as string) || 10;
+  const limit = parseInt(req.query.limit as string) || 10;
+
+  console.log("limit", limit);
 
   // Build dynamic search query
   const filter = buildSearchQuery<IHall>(search, ["name", "address"]);
