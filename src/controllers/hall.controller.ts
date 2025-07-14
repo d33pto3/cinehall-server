@@ -37,6 +37,22 @@ export const getHallsWithMetaForAdmin = async (req: Request, res: Response) => {
   // Build dynamic search query
   const filter = buildSearchQuery<IHall>(search, ["name", "address"]);
 
+  // Screens filter: screen counts like 1, 2, 3+
+  const screens = (req.query.screens as string)?.split(",") || [];
+
+  // Date Range Filter
+  const dateFrom = req.query.dateFrom
+    ? new Date(req.query.dateFrom as string)
+    : null;
+  const dateTo = req.query.dateTo ? new Date(req.query.dateTo as string) : null;
+
+  // Apply createdAt date filter
+  if (dateFrom || dateTo) {
+    filter.createdAt = {};
+    if (dateFrom) filter.createdAt.$gte = dateFrom;
+    if (dateTo) filter.createdAt.$lte = dateTo;
+  }
+
   const paginatedResult = await paginate(Hall, {
     page,
     limit,
@@ -50,8 +66,18 @@ export const getHallsWithMetaForAdmin = async (req: Request, res: Response) => {
   const enrichedData = await Promise.all(
     paginatedResult.data.map(async (hall) => {
       const screenCount = await Screen.countDocuments({ hallId: hall._id });
-      const owner = (hall as unknown as IHallWithOwner).ownerId;
 
+      // Screens filter logic: must watch
+      const includedByScreen =
+        screens.length === 0 ||
+        screens.some((s) => {
+          if (s === "3+") return screenCount >= 3;
+          return screenCount === parseInt(s);
+        });
+
+      if (!includedByScreen) return null;
+
+      const owner = (hall as unknown as IHallWithOwner).ownerId;
       return {
         _id: hall._id,
         name: hall.name,
@@ -62,14 +88,15 @@ export const getHallsWithMetaForAdmin = async (req: Request, res: Response) => {
     }),
   );
 
+  const finalData = enrichedData.filter(Boolean);
+
   res.status(200).json({
     success: true,
     message: "Fetched halls!",
-    // count: enrichedData?.length,
     pages: paginatedResult.pages,
     page: paginatedResult.page,
-    count: paginatedResult.total,
-    data: enrichedData,
+    count: finalData.length,
+    data: finalData,
   });
 };
 
