@@ -73,3 +73,5 @@ app.listen(PORT, (err) => {
   }
   console.log("listening on port " + process.env.PORT);
 });
+
+export default app;
