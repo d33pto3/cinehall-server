@@ -1,4 +1,4 @@
-import mongoose, { ObjectId } from "mongoose";
+import mongoose, { Document, ObjectId } from "mongoose";
 const Schema = mongoose.Schema;
 
 export interface IHall extends Document {
