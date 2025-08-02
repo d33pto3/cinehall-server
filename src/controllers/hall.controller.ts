@@ -27,7 +27,7 @@ export const createHall = async (req: Request, res: Response) => {
 };
 
 export const getHallsWithMetaForAdmin = async (req: Request, res: Response) => {
-  const search = req.query.search as string;
+  const search = (req.query.search as string) || "";
 
   const query: FilterQuery<IHall> = {};
 
