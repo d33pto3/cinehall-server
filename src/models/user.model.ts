@@ -12,7 +12,7 @@ export interface IUser extends Document {
   email: string;
   password?: string;
   role: Role;
-  phone: number;
+  phone: string;
   avatar?: string;
   firebaseUid?: string;
   isVerified?: boolean;
@@ -54,7 +54,7 @@ const userSchema = new Schema<IUser>(
       required: true,
     },
     phone: {
-      type: Number,
+      type: String,
       required: false,
     },
     avatar: {
