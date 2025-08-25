@@ -18,7 +18,7 @@ router.get("/ex", (_req, res) => {
 
 router.use("/auth", authRouter);
 router.use("/user", userRouter);
-router.use("/movies", movieRouter);
+router.use("/movie", movieRouter);
 router.use("/hall", hallRouter);
 router.use("/show", showRouter);
 router.use("/booking", bookingRouter);
