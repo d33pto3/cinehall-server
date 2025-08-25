@@ -21,7 +21,6 @@ interface IHallWithOwner extends Document {
 
 // Create a new Hall
 export const createHall = async (req: Request, res: Response) => {
-  console.log(req.body);
   const { name, address, ownerId } = req.body;
   const hall = new Hall({ name, address, ownerId });
   await hall.save();
