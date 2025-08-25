@@ -54,3 +54,17 @@ export const updateUser = async (req: Request, res: Response) => {
     data: updatedUser,
   });
 };
+
+export const deleteUser = async (req: Request, res: Response) => {
+  const deletedUser = await User.findByIdAndDelete(req.params.id);
+
+  if (!deletedUser) {
+    throw new AppError("User not found", 404);
+  }
+
+  res.status(200).json({
+    success: true,
+    message: "User deleted successfully",
+    data: deletedUser,
+  });
+};
