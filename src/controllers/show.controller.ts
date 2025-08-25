@@ -13,7 +13,6 @@ export const getShows = async (req: Request, res: Response) => {
 };
 
 export const getShowById = async (req: Request, res: Response) => {
-  console.log(req.params.id);
   const show = await Show.findById(req.params.id);
 
   if (!show) {

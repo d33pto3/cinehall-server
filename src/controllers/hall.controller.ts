@@ -5,6 +5,9 @@ import { Hall, Screen } from "../models";
 import { IHall } from "../models/hall.model";
 import { buildSearchQuery } from "../utils/searchQueryBuilder";
 import { paginate } from "../utils/paginate";
+import mongoose from "mongoose";
+
+const ObjectId = mongoose.Types.ObjectId;
 
 interface IHallWithOwner extends Document {
   _id: string;
@@ -106,8 +109,17 @@ export const getHalls = async (_req: Request, res: Response) => {
 };
 
 // Read a single Hall by id
-export const getHallById = async (_req: Request, res: Response) => {
-  const hall = await Hall.findOne();
+export const getHallById = async (req: Request, res: Response) => {
+  if (!req.params.id && !ObjectId.isValid(req.params.id)) {
+    throw new AppError("Provide valid hall!", 400);
+  }
+
+  const hall = await Hall.findById(req.params.id);
+
+  if (!hall) {
+    throw new AppError("Hall not found!", 404);
+  }
+
   res.status(200).json(hall);
 };
 
