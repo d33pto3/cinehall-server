@@ -53,7 +53,7 @@ export const getMovieById = async (req: Request, res: Response) => {
 
 // Delete a Movie by Id
 export const deleteMovie = async (req: Request, res: Response) => {
-  const deletedMovie = await Movie.findById(req.params.id);
+  const deletedMovie = await Movie.findByIdAndDelete(req.params.id);
 
   if (!deletedMovie) {
     throw new AppError("Movie not found!", 404);
