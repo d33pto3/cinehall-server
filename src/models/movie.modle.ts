@@ -1,12 +1,18 @@
 import mongoose from "mongoose";
 const Schema = mongoose.Schema;
 
-const MovieSchema = new Schema({
+interface IMovie {
+  title: string;
+  duration: number;
+  genre: string;
+  releaseDate: Date;
+  director: string;
+  imageUrl: string;
+  imageId: string;
+}
+
+const MovieSchema = new Schema<IMovie>({
   title: {
-    type: String,
-    required: true,
-  },
-  imageUrl: {
     type: String,
     required: true,
   },
@@ -26,10 +32,12 @@ const MovieSchema = new Schema({
     type: String,
     required: true,
   },
-  createdAt: {
-    type: Date,
-    default: Date.now,
+  imageUrl: {
+    type: String,
+  },
+  imageId: {
+    type: String,
   },
 });
 
-export default mongoose.model("Movie", MovieSchema);
+export const Movie = mongoose.model<IMovie>("Movie", MovieSchema);

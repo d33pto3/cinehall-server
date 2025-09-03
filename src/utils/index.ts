@@ -9,6 +9,6 @@ if (!JWT_SECRET) {
 }
 
 // create token function
-export const createToken = (_id: Types.ObjectId): string => {
-  return jwt.sign({ _id }, JWT_SECRET, { expiresIn: "3d" });
+export const createToken = (_id: Types.ObjectId, role: string): string => {
+  return jwt.sign({ _id, role }, JWT_SECRET, { expiresIn: "3d" });
 };

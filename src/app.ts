@@ -36,7 +36,11 @@ Middlewares
 ==============================*/
 app.use(
   cors({
-    origin: ["http://localhost:3000", ""],
+    origin: [
+      "http://localhost:3000",
+      "http://localhost:8081",
+      "http://localhost:5173",
+    ],
     credentials: true,
   }),
 );
@@ -44,6 +48,7 @@ app.use(bodyParser.urlencoded({ extended: false }));
 app.use(bodyParser.json());
 app.use(requestLogger);
 app.use(cookieParser());
+app.use(errorMiddleware);
 
 /*==========================
 Routes
