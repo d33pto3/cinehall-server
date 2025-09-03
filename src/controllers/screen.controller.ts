@@ -4,7 +4,9 @@ import AppError from "../utils/AppError";
 import { generateSeats } from "../utils/seatGenerator";
 
 export const getScreens = async (_req: Request, res: Response) => {
-  const screens = await Screen.find();
+  const screens = await Screen.find().populate("hallId", "name");
+
+  console.log(screens);
 
   res
     .status(200)
