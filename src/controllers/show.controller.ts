@@ -5,7 +5,9 @@ import { Movie, Screen, Show } from "../models";
 
 // Get all showtimes for a specific movie and theater
 export const getShows = async (req: Request, res: Response) => {
-  const shows = await Show.find();
+  const shows = await Show.find()
+    .populate("movieId", "title")
+    .populate("screenId", "name");
 
   res
     .status(200)
@@ -23,7 +25,7 @@ export const getShowById = async (req: Request, res: Response) => {
 };
 
 export const createShow = async (req: Request, res: Response) => {
-  const { movieId, screenId, startTime, endTime } = req.body;
+  const { movieId, hallId, screenId, basePrice, startTime, endTime } = req.body;
 
   const start = new Date(startTime);
   const end = new Date(endTime);
@@ -46,7 +48,9 @@ export const createShow = async (req: Request, res: Response) => {
 
   const show = new Show({
     movieId,
+    hallId,
     screenId,
+    basePrice,
     startTime,
     endTime,
   });
