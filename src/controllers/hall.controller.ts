@@ -34,8 +34,6 @@ export const getHallsWithMetaForAdmin = async (req: Request, res: Response) => {
   const page = parseInt(req.query.page as string) || 1;
   const limit = parseInt(req.query.limit as string) || 10;
 
-  console.log("limit", limit);
-
   // Build dynamic search query
   const filter = buildSearchQuery<IHall>(search, ["name", "address"]);
 
@@ -104,7 +102,11 @@ export const getHallsWithMetaForAdmin = async (req: Request, res: Response) => {
 
 export const getHalls = async (_req: Request, res: Response) => {
   const halls = await Hall.find();
-  res.status(200).json(halls);
+  res.status(200).json({
+    success: true,
+    message: "Fetch all Halss",
+    data: halls,
+  });
 };
 
 // Read a single Hall by id

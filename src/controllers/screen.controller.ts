@@ -14,7 +14,10 @@ export const getScreens = async (_req: Request, res: Response) => {
 };
 
 export const getScreenById = async (req: Request, res: Response) => {
-  const screen = await Screen.findById(req.params.id);
+  const screen = await Screen.findById(req.params.id).populate(
+    "hallId",
+    "name",
+  );
 
   if (!screen) {
     throw new AppError("Screen not found", 404);
@@ -82,19 +85,19 @@ export const createScreen = async (req: Request, res: Response) => {
 };
 
 export const updateScreen = async (req: Request, res: Response) => {
-  const { name, hallId, capacity } = req.body;
+  const { name, hall, rows, columns } = req.body;
 
-  if (hallId) {
-    const hall = await Hall.findById(hallId);
+  if (hall) {
+    const hallId = await Hall.findById(hall);
 
-    if (!hall) {
+    if (!hallId) {
       throw new AppError("Hall not found", 404);
     }
   }
 
   const updatedScreen = await Screen.findByIdAndUpdate(
     req.params.id,
-    { name, hallId, capacity },
+    { name, hallId: hall, columns, rows, capacity: columns * rows },
     { new: true },
   );
 
@@ -104,7 +107,7 @@ export const updateScreen = async (req: Request, res: Response) => {
 
   res
     .status(200)
-    .json({ success: true, message: "Screen updated!", data: updateScreen });
+    .json({ success: true, message: "Updated Screen", data: updatedScreen });
 };
 
 export const deleteScreen = async (req: Request, res: Response) => {
