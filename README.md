@@ -1,7 +1,7 @@
-run in development:
+build and run in development:
 
-docker-compose up cinehall_dev --build
+docker compose up cinehall_dev --build
 
-run in production:
+build and run in production:
 
-docker-compose up cinehall_prod --build
+docker compose up cinehall_prod --build

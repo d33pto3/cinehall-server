@@ -2,6 +2,7 @@ import mongoose, { Document, ObjectId } from "mongoose";
 const Schema = mongoose.Schema;
 
 interface IShow extends Document {
+  hallId: ObjectId;
   movieId: ObjectId;
   screenId: ObjectId;
   startTime: Date;
@@ -11,6 +12,11 @@ interface IShow extends Document {
 
 const showSchema = new Schema<IShow>(
   {
+    hallId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Hall",
+      required: true,
+    },
     movieId: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "Movie",
