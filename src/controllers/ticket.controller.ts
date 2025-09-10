@@ -37,7 +37,9 @@ const ObjectId = mongoose.Types.ObjectId;
 // };
 
 export const getAllTickets = async (_req: Request, res: Response) => {
-  const tickets = await Ticket.find();
+  const tickets = await Ticket.find()
+    .populate("userId", "username")
+    .populate("seatId", "seatNumber");
 
   res.status(200).json({
     success: true,
@@ -61,5 +63,19 @@ export const getTicket = async (req: Request, res: Response) => {
     success: true,
     message: "Successfully fetched ticket!",
     data: ticket,
+  });
+};
+
+export const deleteTicket = async (req: Request, res: Response) => {
+  const deletedTicket = await Ticket.findByIdAndDelete(req.params.id);
+
+  if (!deletedTicket) {
+    throw new AppError("Ticket not found", 404);
+  }
+
+  res.status(200).json({
+    success: true,
+    message: "Ticket deleted!",
+    data: deletedTicket,
   });
 };
