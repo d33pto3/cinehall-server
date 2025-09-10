@@ -27,3 +27,15 @@ const restrictTo = (...allowedRoles: Role[]): RequestHandler => {
 };
 
 export default restrictTo;
+
+// USAGE
+
+// -- Only hall owners can access
+// router.get("/hall-owner-only", restrictTo(Role.HALLOWNER), (req, res) => {
+//   res.send("Hello Hall Owner 🏠");
+// });
+
+// -- Multiple roles can access
+// router.get("/admin-or-owner", restrictTo(Role.ADMIN, Role.HALLOWNER), (req, res) => {
+//   res.send("Hello Admin or Hall Owner!");
+// });
