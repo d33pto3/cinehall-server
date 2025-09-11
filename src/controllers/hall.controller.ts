@@ -100,6 +100,20 @@ export const getHallsWithMetaForAdmin = async (req: Request, res: Response) => {
   });
 };
 
+export const getHallsForHallowner = async (req: Request, res: Response) => {
+  if (!req.body.userId) {
+    throw new AppError("Unauthorized", 401);
+  }
+
+  const halls = await Hall.find({ ownerId: req.body.id });
+
+  res.status(200).json({
+    success: true,
+    message: "Fetched halls for hall owner",
+    data: halls,
+  });
+};
+
 export const getHalls = async (_req: Request, res: Response) => {
   const halls = await Hall.find();
   res.status(200).json({
