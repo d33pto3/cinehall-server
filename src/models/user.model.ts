@@ -78,4 +78,13 @@ const userSchema = new Schema<IUser>(
   },
 );
 
+userSchema.virtual("halls", {
+  ref: "Hall", // Model to populate from
+  localField: "_id", // User._id
+  foreignField: "ownerId", // Hall.ownerId
+});
+
+userSchema.set("toObject", { virtuals: true });
+userSchema.set("toJSON", { virtuals: true });
+
 export const User = mongoose.model<IUser>("User", userSchema);
