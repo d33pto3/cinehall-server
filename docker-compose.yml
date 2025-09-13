@@ -19,7 +19,9 @@ services:
       target: prod
     container_name: cinehall_prod
     ports:
-      - "8000:8000"
+      - "8001:8000"
     env_file:
       - .env
-    command: npm start
+    environment:
+      NODE_ENV: production
+    command: node dist/app.js
