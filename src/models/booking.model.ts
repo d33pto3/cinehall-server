@@ -1,5 +1,5 @@
 import mongoose, { ObjectId } from "mongoose";
-import { PaymentStatus, PaymentMethod } from "../types/enums";
+import { PaymentStatus, PaymentMethod } from "../@types/enums";
 import { IPayment as IPaymentDetails } from "./payment.model";
 const Schema = mongoose.Schema;
 

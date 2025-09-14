@@ -12,7 +12,7 @@ export interface IUser extends Document {
   email: string;
   password?: string;
   role: Role;
-  phone: number;
+  phone: string;
   avatar?: string;
   firebaseUid?: string;
   isVerified?: boolean;
@@ -54,7 +54,7 @@ const userSchema = new Schema<IUser>(
       required: true,
     },
     phone: {
-      type: Number,
+      type: String,
       required: false,
     },
     avatar: {
@@ -77,5 +77,14 @@ const userSchema = new Schema<IUser>(
     timestamps: true,
   },
 );
+
+userSchema.virtual("halls", {
+  ref: "Hall", // Model to populate from
+  localField: "_id", // User._id
+  foreignField: "ownerId", // Hall.ownerId
+});
+
+userSchema.set("toObject", { virtuals: true });
+userSchema.set("toJSON", { virtuals: true });
 
 export const User = mongoose.model<IUser>("User", userSchema);

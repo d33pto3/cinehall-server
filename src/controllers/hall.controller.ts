@@ -5,6 +5,9 @@ import { Hall, Screen } from "../models";
 import { IHall } from "../models/hall.model";
 import { buildSearchQuery } from "../utils/searchQueryBuilder";
 import { paginate } from "../utils/paginate";
+import mongoose from "mongoose";
+
+const ObjectId = mongoose.Types.ObjectId;
 
 interface IHallWithOwner extends Document {
   _id: string;
@@ -18,7 +21,6 @@ interface IHallWithOwner extends Document {
 
 // Create a new Hall
 export const createHall = async (req: Request, res: Response) => {
-  console.log(req.body);
   const { name, address, ownerId } = req.body;
   const hall = new Hall({ name, address, ownerId });
   await hall.save();
@@ -31,8 +33,6 @@ export const getHallsWithMetaForAdmin = async (req: Request, res: Response) => {
   const search = req.query.search as string;
   const page = parseInt(req.query.page as string) || 1;
   const limit = parseInt(req.query.limit as string) || 10;
-
-  console.log("limit", limit);
 
   // Build dynamic search query
   const filter = buildSearchQuery<IHall>(search, ["name", "address"]);
@@ -100,14 +100,74 @@ export const getHallsWithMetaForAdmin = async (req: Request, res: Response) => {
   });
 };
 
+export const getHallsForHallowner = async (req: Request, res: Response) => {
+  if (!req.user) {
+    throw new AppError("Unauthorized", 401);
+  }
+
+  const search = req.query.search as string;
+  const page = parseInt(req.query.page as string) || 1;
+  const limit = parseInt(req.query.limit as string) || 10;
+
+  // Build search filter
+  const filter: Record<string, unknown> = { ownerId: req.user._id };
+  if (search) {
+    filter.$or = [
+      { name: { $regex: search, $options: "i" } },
+      { address: { $regex: search, $options: "i" } },
+    ];
+  }
+
+  const paginatedResult = await paginate(Hall, {
+    page,
+    limit,
+    filter,
+  });
+
+  // Get screen counts for each hall
+  const hallsWithScreenCounts = await Promise.all(
+    paginatedResult.data.map(async (hall) => {
+      const screenCount = await Screen.countDocuments({ hallId: hall._id });
+      return {
+        _id: hall._id,
+        name: hall.name,
+        address: hall.address,
+        screens: screenCount,
+      };
+    }),
+  );
+
+  res.status(200).json({
+    success: true,
+    message: "Fetched halls for hall owner",
+    pages: paginatedResult.pages,
+    page: paginatedResult.page,
+    count: hallsWithScreenCounts.length,
+    data: hallsWithScreenCounts,
+  });
+};
+
 export const getHalls = async (_req: Request, res: Response) => {
   const halls = await Hall.find();
-  res.status(200).json(halls);
+  res.status(200).json({
+    success: true,
+    message: "Fetch all Halss",
+    data: halls,
+  });
 };
 
 // Read a single Hall by id
-export const getHallById = async (_req: Request, res: Response) => {
-  const hall = await Hall.findOne();
+export const getHallById = async (req: Request, res: Response) => {
+  if (!req.params.id && !ObjectId.isValid(req.params.id)) {
+    throw new AppError("Provide valid hall!", 400);
+  }
+
+  const hall = await Hall.findById(req.params.id);
+
+  if (!hall) {
+    throw new AppError("Hall not found!", 404);
+  }
+
   res.status(200).json(hall);
 };
 

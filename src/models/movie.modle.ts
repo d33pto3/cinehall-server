@@ -3,20 +3,18 @@ const Schema = mongoose.Schema;
 
 interface IMovie {
   title: string;
-  imageUrl: string;
   duration: number;
   genre: string;
   releaseDate: Date;
   director: string;
+  imageUrl: string;
+  imageId: string;
 }
 
 const MovieSchema = new Schema<IMovie>({
   title: {
     type: String,
     required: true,
-  },
-  imageUrl: {
-    type: String,
   },
   duration: {
     type: Number,
@@ -33,6 +31,12 @@ const MovieSchema = new Schema<IMovie>({
   director: {
     type: String,
     required: true,
+  },
+  imageUrl: {
+    type: String,
+  },
+  imageId: {
+    type: String,
   },
 });
 

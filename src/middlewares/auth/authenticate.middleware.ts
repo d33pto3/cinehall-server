@@ -12,7 +12,7 @@ const authMiddleware: RequestHandler = async (
   const token = req.cookies?.token;
 
   if (!token) {
-    throw new AppError("User unauthorized", 401);
+    return next(new AppError("User unauthorized", 401));
   }
 
   try {
@@ -25,7 +25,7 @@ const authMiddleware: RequestHandler = async (
     const user = await User.findById(decoded._id);
 
     if (!user) {
-      throw new AppError("User not found", 404);
+      return next(new AppError("User not found", 404));
     }
 
     // 4. Attach only necessary user properties to request

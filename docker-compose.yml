@@ -1,0 +1,27 @@
+services:
+  cinehall_dev:
+    build:
+      context: .
+      target: dev
+    container_name: cinehall_dev
+    ports:
+      - "8000:8000"
+    volumes:
+      - .:/app
+      - /app/node_modules
+    env_file:
+      - .env
+    command: npm run dev
+
+  cinehall_prod:
+    build:
+      context: .
+      target: prod
+    container_name: cinehall_prod
+    ports:
+      - "8001:8000"
+    env_file:
+      - .env
+    environment:
+      NODE_ENV: production
+    command: node dist/app.js

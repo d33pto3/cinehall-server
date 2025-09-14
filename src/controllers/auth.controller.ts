@@ -40,8 +40,6 @@ export const getUser = async (req: Request, res: Response) => {
     throw new AppError("User not found", 404);
   }
 
-  console.log(user);
-
   res.status(200).json({
     _id: user.id,
     email: user.email,
@@ -185,8 +183,12 @@ export const emailPasswordLogin = async (req: Request, res: Response) => {
     maxAge: COOKIE_EXPIRES_IN,
     sameSite: "lax",
     path: "/",
+    // domain:
+    //   process.env.NODE_ENV === "production"
+    //     ? process.env.DOMAIN_URL
+    //     : "localhost",
     domain:
-      process.env.NODE_ENV === "production" ? ".yourdomain.com" : "localhost", // Adjust for dev/prod
+      process.env.NODE_ENV === "production" ? ".yourdomain.com" : undefined,
   });
 
   res.status(200).json({

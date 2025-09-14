@@ -1,7 +1,6 @@
 import mongoose, { Document, ObjectId } from "mongoose";
-import { SeatStatus } from "../types/enums";
+import { SeatStatus } from "../@types/enums";
 const Scheam = mongoose.Schema;
-
 interface ISeat extends Document {
   screenId: ObjectId;
   seatNumber: string;

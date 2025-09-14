@@ -11,6 +11,7 @@ import Routes from "./routes";
 import errorMiddleware from "./middlewares/errorHandler";
 import { handleNotFound } from "./middlewares/handleNotFound";
 import cookieParser from "cookie-parser";
+import authMiddleware from "./middlewares/auth/authenticate.middleware";
 
 /*==============================
 Environment Setup
@@ -56,6 +57,16 @@ Routes
 app.use("/api/v1", Routes);
 app.get("/api/v1", (_req: Request, res: Response) => {
   res.status(200).send("Hello to CineHall!!!!");
+});
+app.get("/api/v1/test-auth", authMiddleware, (req: Request, res: Response) => {
+  // Try accessing req.user - if TypeScript doesn't complain, it's working
+  if (req.user) {
+    console.log(req.user._id); // Should work
+    console.log(req.user.role); // Should work
+    console.log(req.user.email); // Should work
+    // console.log(req.user.nonExistentProperty); // Should show TypeScript error
+  }
+  res.json({ message: "Type checking working!" });
 });
 
 /*========================== 
