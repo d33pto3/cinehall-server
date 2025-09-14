@@ -3,7 +3,7 @@ import { Request, Response } from "express";
 import { Booking, Movie, Screen, Seat, Show, User } from "../models";
 import AppError from "../utils/AppError";
 import mongoose from "mongoose";
-import { PaymentStatus } from "../types/enums";
+import { PaymentStatus } from "../@types/enums";
 import { SslCommerzPayment } from "sslcommerz";
 import { preaparePaymentData } from "../utils/preparePaymentData";
 

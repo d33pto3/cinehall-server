@@ -11,6 +11,7 @@ import {
   updateHall,
 } from "../controllers/hall.controller";
 import asyncHandler from "../middlewares/asyncHandler";
+import authMiddleware from "../middlewares/auth/authenticate.middleware";
 
 // Theater routes
 router.route("/").get(asyncHandler(getHalls)).post(asyncHandler(createHall));
@@ -19,7 +20,7 @@ router.route("/").get(asyncHandler(getHalls)).post(asyncHandler(createHall));
 router.get("/admin", asyncHandler(getHallsWithMetaForAdmin));
 
 // Hallowner routes
-router.get("/hallowner", asyncHandler(getHallsForHallowner));
+router.get("/hallowner", authMiddleware, asyncHandler(getHallsForHallowner));
 
 router
   .route("/:id")

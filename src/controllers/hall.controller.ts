@@ -101,16 +101,49 @@ export const getHallsWithMetaForAdmin = async (req: Request, res: Response) => {
 };
 
 export const getHallsForHallowner = async (req: Request, res: Response) => {
-  if (!req.body.userId) {
+  if (!req.user) {
     throw new AppError("Unauthorized", 401);
   }
 
-  const halls = await Hall.find({ ownerId: req.body.id });
+  const search = req.query.search as string;
+  const page = parseInt(req.query.page as string) || 1;
+  const limit = parseInt(req.query.limit as string) || 10;
+
+  // Build search filter
+  const filter: Record<string, unknown> = { ownerId: req.user._id };
+  if (search) {
+    filter.$or = [
+      { name: { $regex: search, $options: "i" } },
+      { address: { $regex: search, $options: "i" } },
+    ];
+  }
+
+  const paginatedResult = await paginate(Hall, {
+    page,
+    limit,
+    filter,
+  });
+
+  // Get screen counts for each hall
+  const hallsWithScreenCounts = await Promise.all(
+    paginatedResult.data.map(async (hall) => {
+      const screenCount = await Screen.countDocuments({ hallId: hall._id });
+      return {
+        _id: hall._id,
+        name: hall.name,
+        address: hall.address,
+        screens: screenCount,
+      };
+    }),
+  );
 
   res.status(200).json({
     success: true,
     message: "Fetched halls for hall owner",
-    data: halls,
+    pages: paginatedResult.pages,
+    page: paginatedResult.page,
+    count: hallsWithScreenCounts.length,
+    data: hallsWithScreenCounts,
   });
 };
 
