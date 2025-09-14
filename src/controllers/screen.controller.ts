@@ -85,8 +85,12 @@ export const createScreen = async (req: Request, res: Response) => {
 };
 
 export const addScreenToHall = async (req: Request, res: Response) => {
-  const { name, capacity, screenType, amenities } = req.body;
+  const { name, rows, columns } = req.body;
   const { hallId } = req.params;
+
+  if (!name || !rows || !columns) {
+    throw new AppError("Name, rows, and columns are required", 400);
+  }
 
   // Check if screen name is unique within this hall
   const existingScreen = await Screen.findOne({
@@ -103,10 +107,10 @@ export const addScreenToHall = async (req: Request, res: Response) => {
 
   const screen = new Screen({
     name,
-    capacity,
-    screenType,
-    amenities,
+    rows,
+    columns,
     hallId,
+    capacity: rows * columns,
   });
 
   await screen.save();
