@@ -8,6 +8,7 @@ import {
   deleteScreen,
   getScreenById,
   addScreenToHall,
+  getScreensForHallowner,
 } from "../controllers/screen.controller";
 import authMiddleware from "../middlewares/auth/authenticate.middleware";
 import restrictTo from "../middlewares/auth/authorize.middleware";
@@ -21,6 +22,14 @@ router
   .route("/")
   .get(asyncHandler(getScreens))
   .post(asyncHandler(createScreen));
+
+router
+  .route("/hallowner")
+  .get(
+    authMiddleware,
+    restrictTo(Role.HALLOWNER),
+    asyncHandler(getScreensForHallowner),
+  );
 
 router
   .route("/:id")
