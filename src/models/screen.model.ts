@@ -1,7 +1,7 @@
 import mongoose from "mongoose";
 const Schema = mongoose.Schema;
 
-export interface IScreen extends Document {
+export interface IScreen {
   name: string;
   hallId: mongoose.Types.ObjectId;
   capacity: number;
@@ -11,7 +11,9 @@ export interface IScreen extends Document {
   updatedAt: Date;
 }
 
-const screenSchema = new Schema<IScreen>(
+export type IScreenDocument = mongoose.Document & IScreen;
+
+const screenSchema = new Schema<IScreenDocument>(
   {
     name: { type: String, required: true },
     hallId: { type: Schema.Types.ObjectId, ref: "Hall", required: true },
@@ -22,4 +24,4 @@ const screenSchema = new Schema<IScreen>(
   { timestamps: true },
 );
 
-export const Screen = mongoose.model<IScreen>("Screen", screenSchema);
+export const Screen = mongoose.model<IScreenDocument>("Screen", screenSchema);
