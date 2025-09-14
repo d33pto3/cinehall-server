@@ -1,7 +1,7 @@
 import { Request, Response } from "express";
 import { Booking, Payment, Seat } from "../models";
 import AppError from "../utils/AppError";
-import { PaymentStatus, SeatStatus } from "../types/enums";
+import { PaymentStatus, SeatStatus } from "../@types/enums";
 import { generateQrCode } from "../utils/qrCodeGenerator";
 import { Ticket } from "../models/ticket.model";
 
