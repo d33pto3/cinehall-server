@@ -32,6 +32,16 @@ router
   );
 
 router
+  .route("/hallowner/:id")
+  .get(authMiddleware, restrictTo(Role.HALLOWNER), asyncHandler(getScreenById))
+  .post(authMiddleware, restrictTo(Role.HALLOWNER), asyncHandler(updateScreen))
+  .delete(
+    authMiddleware,
+    restrictTo(Role.HALLOWNER),
+    asyncHandler(deleteScreen),
+  );
+
+router
   .route("/:id")
   .get(asyncHandler(getScreenById))
   .put(asyncHandler(updateScreen))
