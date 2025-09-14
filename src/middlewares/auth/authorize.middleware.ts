@@ -15,7 +15,7 @@ const restrictTo = (...allowedRoles: Role[]): RequestHandler => {
     }
 
     // 2. Check if user's role is included in the allowed roles
-    if (!allowedRoles.includes(req.user.role)) {
+    if (!allowedRoles.includes(req.user.role as Role)) {
       return next(
         new AppError("You do not have permission to perform this action", 403),
       );

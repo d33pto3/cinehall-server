@@ -84,6 +84,40 @@ export const createScreen = async (req: Request, res: Response) => {
   res.json({ success: true, message: "Create new Screen", data: newScreen });
 };
 
+export const addScreenToHall = async (req: Request, res: Response) => {
+  const { name, capacity, screenType, amenities } = req.body;
+  const { hallId } = req.params;
+
+  // Check if screen name is unique within this hall
+  const existingScreen = await Screen.findOne({
+    hallId,
+    name: { $regex: new RegExp(`^${name}$`, "i") },
+  });
+
+  if (existingScreen) {
+    throw new AppError(
+      "A screen with this name already exists in your hall",
+      400,
+    );
+  }
+
+  const screen = new Screen({
+    name,
+    capacity,
+    screenType,
+    amenities,
+    hallId,
+  });
+
+  await screen.save();
+
+  res.status(201).json({
+    success: true,
+    message: "Screen added successfully",
+    data: screen,
+  });
+};
+
 export const updateScreen = async (req: Request, res: Response) => {
   const { name, hall, rows, columns } = req.body;
 
