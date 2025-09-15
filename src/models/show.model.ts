@@ -7,7 +7,7 @@ export enum Slots {
   AFTERNOON = "16:00",
   EVENING = "19:00",
 }
-interface IShow extends Document {
+export interface IShow extends Document {
   movieId: ObjectId;
   screenId: ObjectId;
   startTime: Date;

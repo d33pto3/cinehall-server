@@ -151,7 +151,7 @@ export const getHalls = async (_req: Request, res: Response) => {
   const halls = await Hall.find();
   res.status(200).json({
     success: true,
-    message: "Fetch all Halss",
+    message: "Fetch all Halls",
     data: halls,
   });
 };

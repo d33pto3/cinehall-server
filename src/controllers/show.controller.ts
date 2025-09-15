@@ -1,8 +1,10 @@
 // ShowtimeController
 import { Request, Response } from "express";
 import AppError from "../utils/AppError";
-import { Movie, Screen, Show } from "../models";
-import { Slots } from "../models/show.model";
+import { Hall, Movie, Screen, Show } from "../models";
+import { IShow, Slots } from "../models/show.model";
+import { FilterQuery, PopulateOptions } from "mongoose";
+import { paginate } from "../utils/paginate";
 
 // Get all showtimes for a specific movie and theater
 export const getShows = async (req: Request, res: Response) => {
@@ -70,6 +72,8 @@ export const createShow = async (req: Request, res: Response) => {
     );
   }
 
+  console.log(screenId);
+
   const show = new Show({
     movieId,
     screenId,
@@ -84,6 +88,106 @@ export const createShow = async (req: Request, res: Response) => {
   res
     .status(201)
     .json({ success: true, message: "Create new Show!", data: show });
+};
+
+export const getShowsForHallowner = async (req: Request, res: Response) => {
+  const search = req.query.search as string;
+  const page = parseInt(req.query.page as string) || 1;
+  const limit = parseInt(req.query.limit as string) || 10;
+
+  // Filters
+  const dateFrom = req.query.dateFrom
+    ? new Date(req.query.dateFrom as string)
+    : null;
+  const dateTo = req.query.dateTo ? new Date(req.query.dateTo as string) : null;
+
+  // Get owned halls
+  const ownedHalls = await Hall.find({ ownerId: req.user!._id }).select("_id");
+  const ownedHallIds = ownedHalls.map((h) => h._id);
+
+  if (ownedHalls.length === 0) {
+    res.status(200).json({
+      success: true,
+      message: "No halls found for this account",
+      data: [],
+      count: 0,
+      pages: 0,
+      page,
+    });
+    return;
+  }
+
+  // Get screens of those halls
+  const ownedScreens = await Screen.find({
+    hallId: { $in: ownedHallIds },
+  }).select("_id");
+  const ownedScreenIds = ownedScreens.map((s) => s._id);
+
+  if (ownedScreenIds.length === 0) {
+    res.status(200).json({
+      success: true,
+      message: "No screens found in your halls",
+      data: [],
+      count: 0,
+      pages: 0,
+      page,
+    });
+    return;
+  }
+
+  // Build base filter
+  const baseFilter: FilterQuery<IShow> = {
+    screenId: { $in: ownedScreenIds },
+  };
+
+  // Build search filter on movie title
+  const searchFilter: FilterQuery<IShow> = {};
+  if (search) {
+    const movieIds = await Movie.find({
+      title: { $regex: search, $options: "i" },
+    }).select("_id");
+    const ids = movieIds.map((m) => m._id);
+    searchFilter.movieId = { $in: ids };
+  }
+
+  const filter: FilterQuery<IShow> = {
+    ...baseFilter,
+    ...searchFilter,
+  };
+
+  // Apply date filter on startTime
+  if (dateFrom || dateTo) {
+    filter.startTime = {};
+    if (dateFrom) filter.startTime.$gte = dateFrom;
+    if (dateTo) filter.startTime.$lte = dateTo;
+  }
+
+  // Populate movie and screen info
+  const populateOptions: PopulateOptions[] = [
+    { path: "movieId", select: "title duration" },
+    {
+      path: "screenId",
+      select: "name hallId",
+      populate: { path: "hallId", select: "name address" },
+    },
+  ];
+
+  // Paginate
+  const paginatedResult = await paginate<IShow>(Show, {
+    page,
+    limit,
+    filter,
+    populate: populateOptions,
+  });
+
+  res.status(200).json({
+    success: true,
+    message: "Shows fetched successfully",
+    pages: paginatedResult.pages,
+    page: paginatedResult.page,
+    count: paginatedResult.total,
+    data: paginatedResult.data,
+  });
 };
 
 export const updateShow = async (req: Request, res: Response) => {

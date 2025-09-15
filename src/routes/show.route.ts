@@ -7,11 +7,23 @@ import {
   updateShow,
   deleteShow,
   createShow,
+  getShowsForHallowner,
 } from "../controllers/show.controller";
+import restrictTo from "../middlewares/auth/authorize.middleware";
+import { Role } from "../models/user.model";
+import authMiddleware from "../middlewares/auth/authenticate.middleware";
 const router = express.Router();
 
 // Showtime routes
 router.route("/").get(asyncHandler(getShows)).post(asyncHandler(createShow));
+
+router
+  .route("/hallowner")
+  .get(
+    authMiddleware,
+    restrictTo(Role.HALLOWNER),
+    asyncHandler(getShowsForHallowner),
+  );
 
 router
   .route("/:id")
