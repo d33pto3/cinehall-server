@@ -1,13 +1,19 @@
 import mongoose, { Document, ObjectId } from "mongoose";
 const Schema = mongoose.Schema;
 
+export enum Slots {
+  MORNING = "10:00",
+  NOON = "13:00",
+  AFTERNOON = "16:00",
+  EVENING = "19:00",
+}
 interface IShow extends Document {
-  hallId: ObjectId;
   movieId: ObjectId;
   screenId: ObjectId;
   startTime: Date;
   endTime: Date;
   basePrice: number;
+  slot: Slots;
 }
 
 const showSchema = new Schema<IShow>(
@@ -34,6 +40,11 @@ const showSchema = new Schema<IShow>(
       type: Number,
       required: true,
       min: [1, "Base price must be greater than 0"],
+    },
+    slot: {
+      type: String,
+      enum: Object.keys(Slots),
+      required: true,
     },
   },
   {

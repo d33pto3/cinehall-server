@@ -2,6 +2,7 @@
 import { Request, Response } from "express";
 import AppError from "../utils/AppError";
 import { Movie, Screen, Show } from "../models";
+import { Slots } from "../models/show.model";
 
 // Get all showtimes for a specific movie and theater
 export const getShows = async (req: Request, res: Response) => {
@@ -25,33 +26,57 @@ export const getShowById = async (req: Request, res: Response) => {
 };
 
 export const createShow = async (req: Request, res: Response) => {
-  const { movieId, screenId, basePrice, startTime, endTime } = req.body;
+  const { movieId, screenId, slot, date, basePrice } = req.body;
+  const slotKey = slot as keyof typeof Slots;
 
-  const start = new Date(startTime);
-  const end = new Date(endTime);
-
-  if (!Movie.findById(movieId)) {
-    throw new AppError("Not found Movie!", 404);
+  // Validate Movie and Screen existence
+  const movie = await Movie.findById(movieId);
+  if (!movie) {
+    throw new AppError("Movie not found!", 404);
   }
 
   if (!Screen.findById(screenId)) {
-    throw new AppError("Not found Hall!", 404);
+    throw new AppError("Screen not found!", 404);
   }
 
-  if (isNaN(start.getTime()) || isNaN(end.getTime())) {
-    throw new AppError("Invalid start time or end time format", 400);
+  // Validate slot
+  if (!Object.keys(Slots).includes(slot)) {
+    throw new AppError("Invalid slot value", 400);
   }
 
-  if (startTime > endTime) {
-    throw new AppError("End time cannot be greter than Start time", 400);
+  // Generate startTime based on date + slot
+  const [hour, minutes] = Slots[slotKey].split(":").map(Number);
+  const startTime = new Date(date);
+  startTime.setUTCHours(hour, minutes, 0, 0);
+
+  // Calculate endTime = startTime + duration
+  const endTime = new Date(startTime.getTime() + movie.duration * 60000);
+
+  // Check for overlapping shows on the same screen and date
+  const overlappingShow = await Show.findOne({
+    screenId,
+    $or: [
+      {
+        startTime: { $lt: endTime },
+        endTime: { $gt: startTime },
+      },
+    ],
+  });
+
+  if (overlappingShow) {
+    throw new AppError(
+      `Screen already has a show overlapping this time slot on ${date}`,
+      400,
+    );
   }
 
   const show = new Show({
     movieId,
     screenId,
-    basePrice,
     startTime,
     endTime,
+    basePrice,
+    slot,
   });
 
   await show.save();

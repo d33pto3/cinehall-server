@@ -17,7 +17,7 @@ const MovieSchema = new Schema<IMovie>({
     required: true,
   },
   duration: {
-    type: Number,
+    type: Number, // in minutes (like, 179)
     required: true,
   },
   genre: {
