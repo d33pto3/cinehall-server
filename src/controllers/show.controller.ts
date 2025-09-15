@@ -18,7 +18,9 @@ export const getShows = async (req: Request, res: Response) => {
 };
 
 export const getShowById = async (req: Request, res: Response) => {
-  const show = await Show.findById(req.params.id);
+  const show = await Show.findById(req.params.id)
+    .populate("movieId", "title")
+    .populate("screenId", "name");
 
   if (!show) {
     throw new AppError("Not found Show!", 404);

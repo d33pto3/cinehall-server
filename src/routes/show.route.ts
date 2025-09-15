@@ -26,6 +26,11 @@ router
   );
 
 router
+  .route("/hallowner/:id")
+  .get(authMiddleware, restrictTo(Role.HALLOWNER), asyncHandler(getShowById))
+  .put(authMiddleware, restrictTo(Role.HALLOWNER), asyncHandler(updateShow));
+
+router
   .route("/:id")
   .get(asyncHandler(getShowById))
   .put(asyncHandler(updateShow))
