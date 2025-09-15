@@ -25,7 +25,7 @@ export const getShowById = async (req: Request, res: Response) => {
 };
 
 export const createShow = async (req: Request, res: Response) => {
-  const { movieId, hallId, screenId, basePrice, startTime, endTime } = req.body;
+  const { movieId, screenId, basePrice, startTime, endTime } = req.body;
 
   const start = new Date(startTime);
   const end = new Date(endTime);
@@ -48,7 +48,6 @@ export const createShow = async (req: Request, res: Response) => {
 
   const show = new Show({
     movieId,
-    hallId,
     screenId,
     basePrice,
     startTime,

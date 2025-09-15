@@ -12,11 +12,6 @@ interface IShow extends Document {
 
 const showSchema = new Schema<IShow>(
   {
-    hallId: {
-      type: mongoose.Schema.Types.ObjectId,
-      ref: "Hall",
-      required: true,
-    },
     movieId: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "Movie",
