@@ -2,7 +2,7 @@ import mongoose, { Document, ObjectId } from "mongoose";
 import { SeatStatus } from "../@types/enums";
 const Scheam = mongoose.Schema;
 interface ISeat extends Document {
-  screenId: ObjectId;
+  showId: ObjectId;
   seatNumber: string;
   row: string;
   column: number;
@@ -13,7 +13,7 @@ interface ISeat extends Document {
 }
 
 const seatSchema = new Scheam<ISeat>({
-  screenId: {
+  showId: {
     type: mongoose.Schema.Types.ObjectId,
     ref: "Screen",
     required: true,
@@ -49,5 +49,8 @@ const seatSchema = new Scheam<ISeat>({
     default: null,
   },
 });
+
+// MongoDB will reject any insert/update where the combinations already exists
+seatSchema.index({ showId: 1, seatNumber: 1 }, { unique: true });
 
 export const Seat = mongoose.model<ISeat>("Seat", seatSchema);

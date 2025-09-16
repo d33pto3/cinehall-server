@@ -11,7 +11,7 @@ function getRowLabel(index: number): string {
 }
 
 export const generateSeats = async (
-  screenId: mongoose.Types.ObjectId,
+  showId: mongoose.Types.ObjectId,
   rows: number,
   columns: number,
 ) => {
@@ -22,7 +22,7 @@ export const generateSeats = async (
 
     for (let j = 0; j < columns; j++) {
       seats.push({
-        screenId,
+        showId,
         seatNumber: `${rowChar}${j}`,
         row: rowChar,
         column: j,
