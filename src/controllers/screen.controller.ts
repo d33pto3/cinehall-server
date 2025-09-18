@@ -1,7 +1,6 @@
 import { Request, Response } from "express";
 import { Hall, Screen } from "../models";
 import AppError from "../utils/AppError";
-import { generateSeats } from "../utils/seatGenerator";
 import { FilterQuery, PopulateOptions } from "mongoose";
 import { IScreen, IScreenDocument } from "../models/screen.model";
 import { buildSearchQuery } from "../utils/searchQueryBuilder";
@@ -202,8 +201,6 @@ export const createScreen = async (req: Request, res: Response) => {
     columns,
     capacity: rows * columns,
   });
-
-  generateSeats(newScreen._id, rows, columns);
 
   res.json({ success: true, message: "Create new Screen", data: newScreen });
 };

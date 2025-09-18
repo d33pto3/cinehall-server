@@ -5,6 +5,7 @@ import { Hall, Movie, Screen, Show } from "../models";
 import { IShow, Slots } from "../models/show.model";
 import { FilterQuery, PopulateOptions } from "mongoose";
 import { paginate } from "../utils/paginate";
+import { generateSeats } from "../utils/seatGenerator";
 
 // Get all showtimes for a specific movie and theater
 export const getShows = async (req: Request, res: Response) => {
@@ -39,7 +40,8 @@ export const createShow = async (req: Request, res: Response) => {
     throw new AppError("Movie not found!", 404);
   }
 
-  if (!Screen.findById(screenId)) {
+  const screen = await Screen.findById(screenId);
+  if (!screen) {
     throw new AppError("Screen not found!", 404);
   }
 
@@ -74,8 +76,6 @@ export const createShow = async (req: Request, res: Response) => {
     );
   }
 
-  console.log(screenId);
-
   const show = new Show({
     movieId,
     screenId,
@@ -85,7 +85,9 @@ export const createShow = async (req: Request, res: Response) => {
     slot,
   });
 
-  await show.save();
+  const newShow = await show.save();
+
+  generateSeats(newShow._id, screen.rows, screen.columns);
 
   res
     .status(201)
