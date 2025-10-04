@@ -5,6 +5,7 @@ interface IMovie {
   title: string;
   duration: number;
   genre: string;
+  language: string;
   releaseDate: Date;
   director: string;
   imageUrl: string;
@@ -24,6 +25,10 @@ const MovieSchema = new Schema<IMovie>({
     type: String,
     required: true,
   },
+  language: {
+    type: String,
+    required: true,
+  },
   releaseDate: {
     type: Date,
     required: true,
@@ -39,5 +44,7 @@ const MovieSchema = new Schema<IMovie>({
     type: String,
   },
 });
+
+MovieSchema.index({ releaseDate: -1 });
 
 export const Movie = mongoose.model<IMovie>("Movie", MovieSchema);

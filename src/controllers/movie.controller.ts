@@ -1,7 +1,7 @@
 // MovieController
 import { Request, Response } from "express";
 import AppError from "../utils/AppError";
-import { Movie } from "../models";
+import { Movie, Show } from "../models";
 
 // Get all movies
 export const getMovies = async (_req: Request, res: Response) => {
@@ -77,4 +77,34 @@ export const updateMovie = async (req: Request, res: Response) => {
   res
     .status(200)
     .json({ success: true, message: "Movie updated!", data: updatedMovie });
+};
+
+export const nowShowingMovies = async (req: Request, res: Response) => {
+  const today = new Date();
+
+  const nowShowingMovieIds = await Show.distinct("movieId", {
+    endTime: { $gte: today },
+  });
+
+  if (nowShowingMovieIds.length === 0) {
+    res.status(200).json({
+      success: true,
+      message: "Fetch all now showing movies",
+      movies: [],
+    });
+
+    return;
+  }
+
+  const movies = await Movie.find({
+    _id: { $in: nowShowingMovieIds },
+  })
+    .sort({ releaseDate: -1 }) // newest movies first
+    .lean();
+
+  return res.status(200).json({
+    success: true,
+    message: "Fetch all now showing movies",
+    movies,
+  });
 };
