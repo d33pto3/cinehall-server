@@ -102,7 +102,7 @@ export const nowShowingMovies = async (req: Request, res: Response) => {
     .sort({ releaseDate: -1 }) // newest movies first
     .lean();
 
-  return res.status(200).json({
+  res.status(200).json({
     success: true,
     message: "Fetch all now showing movies",
     movies,
