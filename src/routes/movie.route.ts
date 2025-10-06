@@ -8,6 +8,7 @@ import {
   getMovieById,
   updateMovie,
   deleteMovie,
+  nowShowingMovies,
 } from "../controllers/movie.controller";
 import asyncHandler from "../middlewares/asyncHandler";
 
@@ -19,5 +20,7 @@ router
   .get(asyncHandler(getMovieById))
   .put(asyncHandler(updateMovie))
   .delete(asyncHandler(deleteMovie));
+
+router.route("now-showing").get(asyncHandler(nowShowingMovies));
 
 export default router;
