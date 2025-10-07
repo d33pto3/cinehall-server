@@ -15,12 +15,12 @@ import asyncHandler from "../middlewares/asyncHandler";
 // Movie routes
 router.route("/").get(asyncHandler(getMovies)).post(asyncHandler(createMovie));
 
+router.route("/now-showing").get(asyncHandler(nowShowingMovies));
+
 router
   .route("/:id")
   .get(asyncHandler(getMovieById))
   .put(asyncHandler(updateMovie))
   .delete(asyncHandler(deleteMovie));
-
-router.route("now-showing").get(asyncHandler(nowShowingMovies));
 
 export default router;
