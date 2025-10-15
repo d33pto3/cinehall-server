@@ -35,9 +35,7 @@ export const createMovie = async (req: Request, res: Response) => {
 
   await movie.save();
 
-  res
-    .status(201)
-    .json({ success: true, message: "Created new Movie", data: movie });
+  res.status(201).json({ success: true, message: "Created new Movie", movie });
 };
 
 // Get a single movie by ID
@@ -48,7 +46,11 @@ export const getMovieById = async (req: Request, res: Response) => {
     throw new AppError("Movie not found!", 404);
   }
 
-  res.json(movie);
+  res.status(200).json({
+    success: true,
+    message: "Movie fetched!",
+    movie,
+  });
 };
 
 // Delete a Movie by Id
@@ -61,7 +63,7 @@ export const deleteMovie = async (req: Request, res: Response) => {
 
   res
     .status(200)
-    .json({ success: "true", message: "Movie deleted!", data: deleteMovie });
+    .json({ success: true, message: "Movie deleted!", movie: deleteMovie });
 };
 
 // update a Hall by id
@@ -76,7 +78,7 @@ export const updateMovie = async (req: Request, res: Response) => {
 
   res
     .status(200)
-    .json({ success: true, message: "Movie updated!", data: updatedMovie });
+    .json({ success: true, message: "Movie updated!", movie: updatedMovie });
 };
 
 export const nowShowingMovies = async (req: Request, res: Response) => {
