@@ -9,7 +9,27 @@ import { generateSeats } from "../utils/seatGenerator";
 
 // Get all showtimes for a specific movie and theater
 export const getShows = async (req: Request, res: Response) => {
-  const shows = await Show.find()
+  const date = Array.isArray(req.query.date)
+    ? (req.query.date[0] as string)
+    : (req.query.date as string | undefined);
+  const movieId = Array.isArray(req.query.movieId)
+    ? (req.query.movieId[0] as string)
+    : (req.query.movieId as string | undefined);
+
+  const query: FilterQuery<IShow> = {};
+
+  if (movieId) query.movieId = movieId;
+
+  if (movieId) query.movieId = movieId;
+  if (date) {
+    const start = new Date(date);
+    start.setHours(0, 0, 0, 0);
+    const end = new Date(date);
+    end.setHours(23, 59, 59, 999);
+    query.startTime = { $gte: start, $lte: end };
+  }
+
+  const shows = await Show.find(query)
     .populate("movieId", "title")
     .populate("screenId", "name");
 
@@ -18,80 +38,11 @@ export const getShows = async (req: Request, res: Response) => {
     .json({ success: true, message: "Fetch all shows", data: shows });
 };
 
-export const getShowById = async (req: Request, res: Response) => {
-  const show = await Show.findById(req.params.id)
-    .populate("movieId", "title")
-    .populate("screenId", "name");
+export const getShowsForMovieByDate = async (req: Request, res: Response) => {
+  const date = req.query.date;
+  const movieId = req.query.movieId;
 
-  if (!show) {
-    throw new AppError("Not found Show!", 404);
-  }
-
-  res.status(200).json({ success: "true", message: "Show fonud!", data: show });
-};
-
-export const createShow = async (req: Request, res: Response) => {
-  const { movieId, screenId, slot, date, basePrice } = req.body;
-  const slotKey = slot as keyof typeof Slots;
-
-  // Validate Movie and Screen existence
-  const movie = await Movie.findById(movieId);
-  if (!movie) {
-    throw new AppError("Movie not found!", 404);
-  }
-
-  const screen = await Screen.findById(screenId);
-  if (!screen) {
-    throw new AppError("Screen not found!", 404);
-  }
-
-  // Validate slot
-  if (!Object.keys(Slots).includes(slot)) {
-    throw new AppError("Invalid slot value", 400);
-  }
-
-  // Generate startTime based on date + slot
-  const [hour, minutes] = Slots[slotKey].split(":").map(Number);
-  const startTime = new Date(date);
-  startTime.setUTCHours(hour, minutes, 0, 0);
-
-  // Calculate endTime = startTime + duration
-  const endTime = new Date(startTime.getTime() + movie.duration * 60000);
-
-  // Check for overlapping shows on the same screen and date
-  const overlappingShow = await Show.findOne({
-    screenId,
-    $or: [
-      {
-        startTime: { $lt: endTime },
-        endTime: { $gt: startTime },
-      },
-    ],
-  });
-
-  if (overlappingShow) {
-    throw new AppError(
-      `Screen already has a show overlapping this time slot on ${date}`,
-      400,
-    );
-  }
-
-  const show = new Show({
-    movieId,
-    screenId,
-    startTime,
-    endTime,
-    basePrice,
-    slot,
-  });
-
-  const newShow = await show.save();
-
-  generateSeats(newShow._id, screen.rows, screen.columns);
-
-  res
-    .status(201)
-    .json({ success: true, message: "Create new Show!", data: show });
+  res.status(200).json({ date, movieId });
 };
 
 export const getShowsForHallowner = async (req: Request, res: Response) => {
@@ -192,6 +143,82 @@ export const getShowsForHallowner = async (req: Request, res: Response) => {
     count: paginatedResult.total,
     data: paginatedResult.data,
   });
+};
+
+export const getShowById = async (req: Request, res: Response) => {
+  const show = await Show.findById(req.params.id)
+    .populate("movieId", "title")
+    .populate("screenId", "name");
+
+  if (!show) {
+    throw new AppError("Not found Show!", 404);
+  }
+
+  res.status(200).json({ success: "true", message: "Show fonud!", data: show });
+};
+
+export const createShow = async (req: Request, res: Response) => {
+  const { movieId, screenId, slot, date, basePrice } = req.body;
+  const slotKey = slot as keyof typeof Slots;
+
+  // Validate Movie and Screen existence
+  const movie = await Movie.findById(movieId);
+  if (!movie) {
+    throw new AppError("Movie not found!", 404);
+  }
+
+  const screen = await Screen.findById(screenId);
+  if (!screen) {
+    throw new AppError("Screen not found!", 404);
+  }
+
+  // Validate slot
+  if (!Object.keys(Slots).includes(slot)) {
+    throw new AppError("Invalid slot value", 400);
+  }
+
+  // Generate startTime based on date + slot
+  const [hour, minutes] = Slots[slotKey].split(":").map(Number);
+  const startTime = new Date(date);
+  startTime.setUTCHours(hour, minutes, 0, 0);
+
+  // Calculate endTime = startTime + duration
+  const endTime = new Date(startTime.getTime() + movie.duration * 60000);
+
+  // Check for overlapping shows on the same screen and date
+  const overlappingShow = await Show.findOne({
+    screenId,
+    $or: [
+      {
+        startTime: { $lt: endTime },
+        endTime: { $gt: startTime },
+      },
+    ],
+  });
+
+  if (overlappingShow) {
+    throw new AppError(
+      `Screen already has a show overlapping this time slot on ${date}`,
+      400,
+    );
+  }
+
+  const show = new Show({
+    movieId,
+    screenId,
+    startTime,
+    endTime,
+    basePrice,
+    slot,
+  });
+
+  const newShow = await show.save();
+
+  generateSeats(newShow._id, screen.rows, screen.columns);
+
+  res
+    .status(201)
+    .json({ success: true, message: "Create new Show!", data: show });
 };
 
 export const updateShow = async (req: Request, res: Response) => {
