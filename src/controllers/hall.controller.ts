@@ -1,7 +1,7 @@
 // HallController
 import { Request, Response } from "express";
 import AppError from "../utils/AppError";
-import { Hall, Screen } from "../models";
+import { Hall, Screen, Show } from "../models";
 import { IHall } from "../models/hall.model";
 import { buildSearchQuery } from "../utils/searchQueryBuilder";
 import { paginate } from "../utils/paginate";
@@ -152,6 +152,68 @@ export const getHalls = async (_req: Request, res: Response) => {
   res.status(200).json({
     success: true,
     message: "Fetch all Halls",
+    data: halls,
+  });
+};
+
+export const getHallsByMovieAndDate = async (req: Request, res: Response) => {
+  const { movieId, date } = req.query;
+
+  if (!movieId || !date) {
+    throw new AppError("movieId and date required", 400);
+  }
+
+  if (!mongoose.Types.ObjectId.isValid(movieId as string)) {
+    throw new AppError("Movie is not valid", 400);
+  }
+
+  // Convert provided date to a range for the full day
+  const startOfDay = new Date(date as string);
+  startOfDay.setHours(0, 0, 0, 0);
+
+  const endOfDay = new Date(date as string);
+  endOfDay.setHours(23, 59, 59, 999);
+
+  // Aggregation pipeline
+  const halls = await Show.aggregate([
+    {
+      $match: {
+        movieId: new mongoose.Types.ObjectId(movieId as string),
+        startTime: { $gte: startOfDay, $lte: endOfDay },
+      },
+    },
+    {
+      $lookup: {
+        from: "screens",
+        localField: "screenId",
+        foreignField: "_id",
+        as: "screen",
+      },
+    },
+    { $unwind: "$screen" },
+    {
+      $lookup: {
+        from: "halls",
+        localField: "screen.hallId",
+        foreignField: "_id",
+        as: "hall",
+      },
+    },
+    { $unwind: "$hall" },
+    {
+      $group: {
+        _id: "$hall._id",
+        name: { $first: "$hall.name" },
+        address: { $first: "$hall.address" },
+        // ownerId: { $first: "$hall.ownerId" },
+      },
+    },
+  ]);
+
+  res.status(200).json({
+    success: true,
+    message: "Fetched halls showing the movie on this date",
+    count: halls.length,
     data: halls,
   });
 };
