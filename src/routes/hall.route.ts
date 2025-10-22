@@ -6,6 +6,7 @@ import {
   deleteHall,
   getHallById,
   getHalls,
+  getHallsByMovieAndDate,
   getHallsForHallowner,
   getHallsWithMetaForAdmin,
   updateHall,
@@ -21,6 +22,8 @@ router.get("/admin", asyncHandler(getHallsWithMetaForAdmin));
 
 // Hallowner routes
 router.get("/hallowner", authMiddleware, asyncHandler(getHallsForHallowner));
+
+router.get("/by-movie", asyncHandler(getHallsByMovieAndDate));
 
 router
   .route("/:id")
