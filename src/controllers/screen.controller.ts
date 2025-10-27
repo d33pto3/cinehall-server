@@ -1,7 +1,7 @@
 import { Request, Response } from "express";
-import { Hall, Screen } from "../models";
+import { Hall, Screen, Show } from "../models";
 import AppError from "../utils/AppError";
-import { FilterQuery, PopulateOptions } from "mongoose";
+import mongoose, { FilterQuery, PopulateOptions } from "mongoose";
 import { IScreen, IScreenDocument } from "../models/screen.model";
 import { buildSearchQuery } from "../utils/searchQueryBuilder";
 import { paginate } from "../utils/paginate";
@@ -49,6 +49,67 @@ export const getScreensByHall = async (req: Request, res: Response) => {
   res.status(200).json({
     success: true,
     message: `Fetched all screens for hall ${hall.name}`,
+    data: screens,
+  });
+};
+
+export const getScreensByHallMovieAndDate = async (
+  req: Request,
+  res: Response,
+) => {
+  const { hallId, movieId, date } = req.query;
+
+  if (!hallId || !movieId || !date) {
+    throw new AppError("hallId, movieId and date are required", 400);
+  }
+
+  if (
+    !mongoose.Types.ObjectId.isValid(hallId as string) ||
+    !mongoose.Types.ObjectId.isValid(movieId as string)
+  ) {
+    throw new AppError("Invalid hallId or movieId", 400);
+  }
+
+  const startOfDay = new Date(date as string);
+  startOfDay.setHours(0, 0, 0, 0);
+
+  const endOfDay = new Date(date as string);
+  endOfDay.setHours(23, 59, 59, 999);
+
+  const screens = await Show.aggregate([
+    {
+      $match: {
+        movieId: new mongoose.Types.ObjectId(movieId as string),
+        startTime: { $gte: startOfDay, $lte: endOfDay },
+      },
+    },
+    {
+      $lookup: {
+        from: "screens",
+        localField: "screenId",
+        foreignField: "_id",
+        as: "screen",
+      },
+    },
+    { $unwind: "$screen" },
+    {
+      $match: {
+        "screen.hallId": new mongoose.Types.ObjectId(hallId as string),
+      },
+    },
+    {
+      $group: {
+        _id: "$screen._id",
+        name: { $first: "$screen.name" },
+        hallId: { $first: "$screen.hallId" },
+      },
+    },
+  ]);
+
+  res.status(200).json({
+    success: true,
+    message: "Fetched screens showing the movie in this hall on this date",
+    count: screens.length,
     data: screens,
   });
 };
