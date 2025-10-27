@@ -9,6 +9,7 @@ import {
   getScreenById,
   addScreenToHall,
   getScreensForHallowner,
+  getScreensByHallMovieAndDate,
 } from "../controllers/screen.controller";
 import authMiddleware from "../middlewares/auth/authenticate.middleware";
 import restrictTo from "../middlewares/auth/authorize.middleware";
@@ -32,6 +33,10 @@ router
   );
 
 router
+  .route("/by-movie-hall-date")
+  .get(asyncHandler(getScreensByHallMovieAndDate));
+
+router
   .route("/hallowner/:id")
   .get(authMiddleware, restrictTo(Role.HALLOWNER), asyncHandler(getScreenById))
   .post(authMiddleware, restrictTo(Role.HALLOWNER), asyncHandler(updateScreen))
@@ -42,12 +47,6 @@ router
   );
 
 router
-  .route("/:id")
-  .get(asyncHandler(getScreenById))
-  .put(asyncHandler(updateScreen))
-  .delete(asyncHandler(deleteScreen));
-
-router
   .route("/hall/:hallId")
   .get(asyncHandler(getScreensByHall))
   .post(
@@ -56,5 +55,11 @@ router
     checkHallOwnership,
     asyncHandler(addScreenToHall),
   );
+
+router
+  .route("/:id")
+  .get(asyncHandler(getScreenById))
+  .put(asyncHandler(updateScreen))
+  .delete(asyncHandler(deleteScreen));
 
 export default router;
