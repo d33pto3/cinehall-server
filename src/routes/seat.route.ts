@@ -2,20 +2,19 @@ import express from "express";
 import asyncHandler from "../middlewares/asyncHandler";
 import {
   deleteSeat,
-  getSeatsByScreenId,
   updateSeat,
-  createSeatsByScreenId,
-  holdSeat,
+  releaseSeats,
+  holdSeats,
+  getSeatsByShowId,
+  bookSeats,
 } from "../controllers/seat.controller";
 
 const router = express.Router();
 
-router
-  .route("/screen/:screenId")
-  .get(asyncHandler(getSeatsByScreenId))
-  .post(asyncHandler(createSeatsByScreenId));
-
-router.route("/hold/:id").post(asyncHandler(holdSeat));
+router.get("/shows/:showId/seats", getSeatsByShowId);
+router.post("/shows/:showId/seats/hold", holdSeats);
+router.post("/shows/:showId/seats/release", releaseSeats);
+router.post("/shows/:showId/seats/book", bookSeats);
 
 router
   .route("/:id")

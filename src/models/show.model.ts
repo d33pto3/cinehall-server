@@ -52,4 +52,14 @@ const showSchema = new Schema<IShow>(
   },
 );
 
+showSchema.pre("save", function (next) {
+  if (this.endTime <= this.startTime) {
+    next(new Error("End time must be after start time"));
+  }
+  next();
+});
+
+showSchema.index({ movieId: 1, startTime: 1 });
+showSchema.index({ screenId: 1, startTime: 1 });
+
 export const Show = mongoose.model<IShow>("Show", showSchema);
