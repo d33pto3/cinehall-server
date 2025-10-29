@@ -37,8 +37,7 @@ const seatSchema = new Schema<ISeat>(
       default: SeatStatus.AVAILABLE,
     },
     heldBy: {
-      type: mongoose.Schema.Types.ObjectId,
-      ref: "User",
+      type: String,
       default: null,
     },
     isHeld: {

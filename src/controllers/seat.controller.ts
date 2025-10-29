@@ -7,6 +7,16 @@ import { SeatStatus } from "../@types/enums";
 
 const ObjectId = mongoose.Types.ObjectId;
 
+export const getSeatById = async (req: Request, res: Response) => {
+  const seat = await Seat.findById(req.params.id);
+
+  if (!seat) {
+    throw new AppError("Not found Show!", 404);
+  }
+
+  res.status(200).json({ success: "true", message: "Show fonud!", data: seat });
+};
+
 export const createSeatsByShowId = async (req: Request, res: Response) => {
   const { seatNumber, row, column } = req.body;
   const showId = req.params.showId;
@@ -61,8 +71,9 @@ export const getSeatsByShowId = async (req: Request, res: Response) => {
 
 export const holdSeats = async (req: Request, res: Response) => {
   const { showId } = req.params;
-  // guest user can hold seat
   const { seatIds, userId } = req.body;
+
+  console.log("hold", seatIds, userId);
 
   if (!ObjectId.isValid(showId)) {
     throw new AppError("Invalid Show!", 400);
@@ -72,18 +83,22 @@ export const holdSeats = async (req: Request, res: Response) => {
     throw new AppError("Provide valid seat IDs!", 400);
   }
 
+  if (!userId || typeof userId !== "string") {
+    throw new AppError("User ID or Guest ID required!", 400);
+  }
+
   const session = await mongoose.startSession();
   session.startTransaction();
 
   try {
-    // Check if all seats are available
+    // Check if seats are available OR expired holds OR already held by this user
     const seats = await Seat.find({
       _id: { $in: seatIds },
       showId,
-      status: SeatStatus.AVAILABLE,
       $or: [
-        { isHeld: false },
-        { heldUntil: { $lt: new Date() } }, // Include expired holds
+        { status: SeatStatus.AVAILABLE, isHeld: false }, // Truly available
+        { heldUntil: { $lt: new Date() } }, // Expired holds
+        { heldBy: userId, isHeld: true }, // Already held by this user (re-holding)
       ],
     }).session(session);
 
@@ -91,8 +106,21 @@ export const holdSeats = async (req: Request, res: Response) => {
       throw new AppError("Some seats are not available!", 400);
     }
 
-    // Hold seats atomically
-    const heldUntil = new Date(Date.now() + 5 * 60 * 1000); // 5 minutes
+    // Check if any seats are held by OTHER users
+    const heldByOthers = seats.some(
+      (seat) =>
+        seat.isHeld &&
+        seat.heldBy &&
+        seat.heldBy.toString() !== userId &&
+        seat.heldUntil &&
+        new Date(seat.heldUntil) > new Date(),
+    );
+
+    if (heldByOthers) {
+      throw new AppError("Some seats are currently held by other users!", 400);
+    }
+
+    const heldUntil = new Date(Date.now() + 5 * 60 * 1000);
 
     await Seat.updateMany(
       {
@@ -104,6 +132,8 @@ export const holdSeats = async (req: Request, res: Response) => {
           isHeld: true,
           heldBy: userId,
           heldUntil,
+          // DON'T change status to BLOCKED - keep it AVAILABLE so holds can be released
+          // Status only becomes BOOKED after payment confirmation
         },
       },
     ).session(session);
@@ -113,10 +143,7 @@ export const holdSeats = async (req: Request, res: Response) => {
     res.status(200).json({
       success: true,
       message: "Seats held successfully!",
-      data: {
-        seatIds,
-        heldUntil,
-      },
+      data: { seatIds, heldUntil },
     });
   } catch (error) {
     await session.abortTransaction();
@@ -130,12 +157,18 @@ export const releaseSeats = async (req: Request, res: Response) => {
   const { showId } = req.params;
   const { seatIds, userId } = req.body;
 
+  console.log(seatIds, userId);
+
   if (!ObjectId.isValid(showId)) {
     throw new AppError("Invalid show ID!", 400);
   }
 
   if (!seatIds || !Array.isArray(seatIds) || seatIds.length === 0) {
     throw new AppError("Provide valid seat IDs!", 400);
+  }
+
+  if (!userId || typeof userId !== "string") {
+    throw new AppError("User ID required!", 400);
   }
 
   // Only release if held by this user
@@ -151,6 +184,7 @@ export const releaseSeats = async (req: Request, res: Response) => {
         isHeld: false,
         heldBy: null,
         heldUntil: null,
+        // Keep status as AVAILABLE (don't change it)
       },
     },
   );
@@ -160,6 +194,7 @@ export const releaseSeats = async (req: Request, res: Response) => {
     message: `${result.modifiedCount} seat(s) released!`,
     data: {
       releasedCount: result.modifiedCount,
+      requestedCount: seatIds.length,
     },
   });
 };

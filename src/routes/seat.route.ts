@@ -7,17 +7,19 @@ import {
   holdSeats,
   getSeatsByShowId,
   bookSeats,
+  getSeatById,
 } from "../controllers/seat.controller";
 
 const router = express.Router();
 
-router.get("/shows/:showId/seats", getSeatsByShowId);
-router.post("/shows/:showId/seats/hold", holdSeats);
-router.post("/shows/:showId/seats/release", releaseSeats);
-router.post("/shows/:showId/seats/book", bookSeats);
+router.get("/shows/:showId", getSeatsByShowId);
+router.post("/shows/:showId/hold", holdSeats);
+router.post("/shows/:showId/release", releaseSeats);
+router.post("/shows/:showId/book", bookSeats);
 
 router
   .route("/:id")
+  .get(asyncHandler(getSeatById))
   .put(asyncHandler(updateSeat))
   .delete(asyncHandler(deleteSeat));
 
