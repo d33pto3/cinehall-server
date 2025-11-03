@@ -6,22 +6,22 @@ import bcrypt from "bcrypt";
 import { User } from "../models";
 import jwt from "jsonwebtoken";
 
-const COOKIE_EXPIRES_IN = 3 * 24 * 60 * 60 * 1000;
-const COOKIE_OPTIONS = {
+const COOKIE_EXPIRES_IN = 3 * 24 * 60 * 60 * 1000; // 3 days
+
+// Common cookie options
+const getCookieOptions = () => ({
   httpOnly: true,
   secure: process.env.NODE_ENV === "production",
   maxAge: COOKIE_EXPIRES_IN,
-  sameSite: "lax" as const,
-};
-
-// Helper function to format user response
-// const formatUserResponse = (user: any): IUserResponse => ({
-//   _id: user._id,
-//   email: user.email,
-//   name: user.username || user.name || "Anonymous",
-//   ...(user.role && { role: user.role }),
-//   ...(user.phone && { phone: user.phone }),
-// });
+  sameSite:
+    process.env.NODE_ENV === "production"
+      ? ("none" as const)
+      : ("lax" as const),
+  // For cross-origin requests in production (mobile app), use sameSite: 'none' and secure: true
+  ...(process.env.NODE_ENV === "production" && {
+    domain: process.env.COOKIE_DOMAIN, // e.g., ".yourdomain.com"
+  }),
+});
 
 export const getUser = async (req: Request, res: Response) => {
   const token = req.cookies.token;
@@ -30,9 +30,12 @@ export const getUser = async (req: Request, res: Response) => {
     throw new AppError("Not authenticated", 401);
   }
 
-  const decoded = jwt.verify(token, process.env.JWT_SECRET!) as {
-    _id: string;
-  };
+  let decoded;
+  try {
+    decoded = jwt.verify(token, process.env.JWT_SECRET!) as { _id: string };
+  } catch {
+    throw new AppError("Invalid or expired token", 401);
+  }
 
   const user = await User.findById(decoded._id);
 
@@ -40,8 +43,9 @@ export const getUser = async (req: Request, res: Response) => {
     throw new AppError("User not found", 404);
   }
 
+  // Return consistent user object
   res.status(200).json({
-    _id: user.id,
+    _id: user._id,
     email: user.email,
     username: user.username,
     role: user.role,
@@ -62,40 +66,36 @@ export const firebaseLogin = async (req: Request, res: Response) => {
   const { uid, email, name, picture } = decodedToken;
 
   const displayName =
-    name.split(" ")[0] ||
-    (email && email.split("@")[0] + Math.floor(Math.random() * 1000));
+    name?.split(" ")[0] ||
+    (email && email.split("@")[0] + Math.floor(Math.random() * 1000)) ||
+    "User";
 
-  // Check if the user already exists in the database
+  // Check if the user already exists
   let user = await User.findOne({ $or: [{ firebaseUid: uid }, { email }] });
 
   if (!user) {
-    // Create a new user if they don't exist
+    // Create a new user
     user = new User({
       email,
       firebaseUid: uid,
-      username: displayName, // Default name if not provided
+      username: displayName,
       role: "user",
       avatar: picture || null,
     });
     await user.save();
   } else if (user.firebaseUid !== uid) {
-    // Update existing user with Firebase UID if missing
+    // Update existing user with Firebase UID
     user.firebaseUid = uid;
     await user.save();
   }
 
-  // Generate a JWT token for your backend
+  // Generate JWT token
   const token = createToken(user._id, user.role);
 
-  res.cookie("token", token, {
-    httpOnly: true, // Prevents client-side JS from reading the cookie
-    secure: process.env.NODE_ENV === "production", // Ensures the browser only sends the cookie over HTTPS in production
-    maxAge: COOKIE_EXPIRES_IN, // Sets the cookie to expire in 1 day
-    sameSite: "strict",
-    // path: "/",
-  });
+  // Set cookie
+  res.cookie("token", token, getCookieOptions());
 
-  // Send the token and user information back to the client
+  // Return user data
   res.status(200).json({
     success: true,
     user: {
@@ -112,13 +112,13 @@ export const register = async (req: Request, res: Response) => {
   const { email, password, username } = req.body;
 
   if (!email || !password || !username) {
-    throw new AppError("Please provide email, password and name", 400);
+    throw new AppError("Please provide email, password and username", 400);
   }
 
   const existingUser = await User.findOne({ email });
 
   if (existingUser) {
-    throw new AppError("User already exists", 400);
+    throw new AppError("User already exists with this email", 400);
   }
 
   const hashedPassword = await bcrypt.hash(password, 10);
@@ -131,17 +131,19 @@ export const register = async (req: Request, res: Response) => {
   });
 
   await user.save();
+
+  // Generate token
   const token = createToken(user._id, user.role);
 
-  // Save the token in a cookie
-  res.cookie("token", token, COOKIE_OPTIONS);
+  // Set cookie
+  res.cookie("token", token, getCookieOptions());
 
   res.status(201).json({
     success: true,
     user: {
       _id: user._id,
       email: user.email,
-      name: user.username,
+      username: user.username,
       role: user.role,
       phone: user.phone,
     },
@@ -157,95 +159,56 @@ export const emailPasswordLogin = async (req: Request, res: Response) => {
 
   const user = await User.findOne({ email }).select("+password");
 
-  console.log(user);
-
   if (!user) {
-    throw new AppError("User not found", 404);
+    throw new AppError("Invalid email or password", 401); // Don't reveal which is wrong
   }
 
   if (!user.password) {
-    throw new AppError("Login with gmail or set password!", 400);
+    throw new AppError(
+      "This account uses social login. Please login with Google",
+      400,
+    );
   }
 
   // Compare passwords
   const isMatch = await bcrypt.compare(password, user.password);
 
   if (!isMatch) {
-    throw new AppError("Invalid password", 401);
+    throw new AppError("Invalid email or password", 401);
   }
 
+  // Generate token
   const token = createToken(user._id, user.role);
 
-  // Save the token in a cookie
-  res.cookie("token", token, {
-    httpOnly: true,
-    secure: process.env.NODE_ENV === "production",
-    maxAge: COOKIE_EXPIRES_IN,
-    sameSite: "lax",
-    path: "/",
-    // domain:
-    //   process.env.NODE_ENV === "production"
-    //     ? process.env.DOMAIN_URL
-    //     : "localhost",
-    domain:
-      process.env.NODE_ENV === "production" ? ".yourdomain.com" : undefined,
-  });
+  // Set cookie
+  res.cookie("token", token, getCookieOptions());
 
   res.status(200).json({
     success: true,
     user: {
       _id: user._id,
       email: user.email,
-      name: user.username,
+      username: user.username,
       role: user.role,
+      phone: user?.phone,
+      avatar: user?.avatar,
     },
   });
 };
 
 export const logout = async (req: Request, res: Response): Promise<void> => {
-  const token = req.cookies?.token;
-
-  if (!token) {
-    // User is already logged out
-    throw new AppError("Already logged out", 400);
-  }
-
   // Clear the token cookie
-  res.clearCookie("token");
-  res.status(200).json({ success: true, message: "Logged out successfully" });
+  res.clearCookie("token", {
+    httpOnly: true,
+    secure: process.env.NODE_ENV === "production",
+    sameSite: process.env.NODE_ENV === "production" ? "none" : "lax",
+    ...(process.env.NODE_ENV === "production" && {
+      domain: process.env.COOKIE_DOMAIN,
+    }),
+  });
+
+  res.status(200).json({
+    success: true,
+    message: "Logged out successfully",
+  });
 };
-
-// TODO
-// export const sendEmailVerification = async (
-//   req: Request,
-//   res: Response,
-// ): Promise<void> => {
-//   const user = await User.findById(req.user?._id);
-
-//   if (!user) {
-//     throw new AppError("User not found", 404);
-//   }
-
-//   if (user.isVerified) {
-//     throw new AppError("Email already verified", 200);
-//   }
-
-//   // Generate verification token
-//   const token = randomBytes(32).toString("hex");
-//   user.emailVerificationToken = token;
-//   await user.save();
-
-//   const verifyUrl = `${process.env.FRONTEND_URL}/verify-email?token=${token}`;
-
-//   // Send email
-//   await sendEmail(
-//     user.email,
-//     "Verify your email",
-//     `
-//     <p>Click the link below to verify your email:</p>
-//     <a href="${verifyUrl}">${verifyUrl}</a>
-//   `,
-//   );
-
-//   res.status(200).json({ message: "Verification email sent" });
-// };
