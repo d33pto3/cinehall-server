@@ -89,9 +89,13 @@ export const createBooking = async (req: Request, res: Response) => {
     seats,
     totalPrice,
     paymentStatus: PaymentStatus.PENDING,
+    expiresAt: new Date(Date.now() + 5 * 60 * 1000),
   });
 
-  console.log(newBooking);
+  await Seat.updateMany(
+    { _id: { $in: seats } },
+    { $set: { status: "blocked" } },
+  );
 
   res.status(201).json({
     success: true,
@@ -149,4 +153,27 @@ export const initiatePayment = async (req: Request, res: Response) => {
     message: "Redirect to payment gateway",
     url: GatewayPageURL,
   });
+};
+
+export const cleanupExpiredBookings = async () => {
+  const fiveMinutesAgo = new Date(Date.now() - 5 * 60 * 1000);
+
+  const expiredBookings = await Booking.find({
+    paymentStatus: { $ne: PaymentStatus.PAID },
+    createdAt: { $lt: fiveMinutesAgo },
+  });
+
+  if (!expiredBookings.length) return;
+
+  console.log(`[CLEANUP] Found ${expiredBookings.length} expired bookings`);
+
+  for (const booking of expiredBookings) {
+    await Seat.updateMany(
+      { _id: { $in: booking.seats } },
+      { $set: { status: "available" } },
+    );
+    await Booking.findByIdAndDelete(booking._id);
+  }
+
+  console.log(`[CLEANUP] ${expiredBookings.length} bookings deleted.`);
 };
