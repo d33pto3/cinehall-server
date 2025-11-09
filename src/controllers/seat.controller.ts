@@ -11,7 +11,7 @@ export const getSeatById = async (req: Request, res: Response) => {
   const seat = await Seat.findById(req.params.id);
 
   if (!seat) {
-    throw new AppError("Not found Show!", 404);
+    throw new AppError("Not found Seat!", 404);
   }
 
   res.status(200).json({ success: "true", message: "Show fonud!", data: seat });
@@ -331,14 +331,3 @@ export const cleanupExpiredHolds = async () => {
     throw error;
   }
 };
-
-// cron.schedule("*/1 * * * *", async () => {
-//   console.log("Checking for expired held seats");
-
-//   await Seat.updateMany(
-//     { isHeld: true, heldUntil: { $lt: new Date() } },
-//     { $set: { isHeld: false, heldBy: null, heldUntil: null } },
-//   );
-
-//   console.log("expired seats released");
-// });

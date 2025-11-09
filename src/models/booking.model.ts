@@ -16,6 +16,7 @@ export interface IBooking extends Document {
   isCancelled: boolean;
   tran_id?: string;
   paymentDetials: IPaymentDetails;
+  expiresAt: Date;
 }
 
 const BookingSchema = new Schema<IBooking>(
@@ -69,6 +70,7 @@ const BookingSchema = new Schema<IBooking>(
       type: mongoose.Schema.Types.ObjectId,
       ref: "Payment",
     },
+    expiresAt: { type: Date, required: true },
   },
   {
     timestamps: true,
