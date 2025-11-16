@@ -4,7 +4,8 @@ import { IPayment as IPaymentDetails } from "./payment.model";
 const Schema = mongoose.Schema;
 
 export interface IBooking extends Document {
-  userId: ObjectId;
+  userId?: ObjectId;
+  guestId?: string;
   showId: ObjectId;
   screenId: ObjectId;
   movieId: ObjectId;
@@ -24,6 +25,10 @@ const BookingSchema = new Schema<IBooking>(
     userId: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "User",
+      required: false,
+    },
+    guestId: {
+      type: String,
       required: true,
     },
     showId: {

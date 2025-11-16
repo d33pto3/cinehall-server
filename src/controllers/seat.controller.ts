@@ -313,6 +313,7 @@ export const cleanupExpiredHolds = async () => {
     const result = await Seat.updateMany(
       {
         isHeld: true,
+        status: { $ne: SeatStatus.BOOKED },
         heldUntil: { $lt: new Date() },
       },
       {
@@ -320,6 +321,7 @@ export const cleanupExpiredHolds = async () => {
           isHeld: false,
           heldBy: null,
           heldUntil: null,
+          status: SeatStatus.AVAILABLE,
         },
       },
     );
