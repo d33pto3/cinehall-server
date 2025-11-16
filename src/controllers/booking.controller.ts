@@ -3,7 +3,7 @@ import { Request, Response } from "express";
 import { Booking, Movie, Screen, Seat, Show, User } from "../models";
 import AppError from "../utils/AppError";
 import mongoose from "mongoose";
-import { PaymentStatus } from "../@types/enums";
+import { PaymentStatus, SeatStatus } from "../@types/enums";
 import { SslCommerzPayment } from "sslcommerz";
 import { preaparePaymentData } from "../utils/preparePaymentData";
 
@@ -31,12 +31,15 @@ export const getBookings = async (req: Request, res: Response) => {
 
 // Create a new booking
 export const createBooking = async (req: Request, res: Response) => {
-  const { userId, showId, screenId, movieId, seats } = req.body;
+  const { userId, guestId, showId, screenId, movieId, seats } = req.body;
 
-  const user = await User.findById(userId);
+  const heldUntil = new Date(Date.now() + 5 * 60 * 1000);
 
-  if (!ObjectId.isValid(userId) || !user) {
-    throw new AppError("Provide valid User!", 400);
+  if (userId && !ObjectId.isValid(userId)) {
+    const user = await User.findById(userId);
+    if (!user) {
+      throw new AppError("Provide valid User!", 400);
+    }
   }
 
   const show = await Show.findById(showId);
@@ -85,6 +88,7 @@ export const createBooking = async (req: Request, res: Response) => {
     userId,
     showId,
     screenId,
+    guestId,
     movieId,
     seats,
     totalPrice,
@@ -94,7 +98,14 @@ export const createBooking = async (req: Request, res: Response) => {
 
   await Seat.updateMany(
     { _id: { $in: seats } },
-    { $set: { status: "blocked" } },
+    {
+      $set: {
+        isHeld: true,
+        heldBy: userId,
+        heldUntil,
+        status: SeatStatus.BLOCKED,
+      },
+    },
   );
 
   res.status(201).json({

@@ -66,7 +66,7 @@ export const paymentSuccessHandler = async (req: Request, res: Response) => {
       booking._id.toString(),
       seatId.toString(),
       booking.showId.toString(),
-      booking.userId.toString(),
+      booking.userId!.toString(),
     );
 
     const ticket = await Ticket.create({
