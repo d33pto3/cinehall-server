@@ -18,6 +18,7 @@ export interface IBooking extends Document {
   tran_id?: string;
   paymentDetials: IPaymentDetails;
   expiresAt: Date;
+  _id?: string;
 }
 
 const BookingSchema = new Schema<IBooking>(
@@ -29,7 +30,7 @@ const BookingSchema = new Schema<IBooking>(
     },
     guestId: {
       type: String,
-      required: true,
+      required: false,
     },
     showId: {
       type: mongoose.Schema.Types.ObjectId,
@@ -81,5 +82,13 @@ const BookingSchema = new Schema<IBooking>(
     timestamps: true,
   },
 );
+
+BookingSchema.pre("validate", function (next) {
+  if (!this.userId && !this.guestId) {
+    next(new Error("Either userId or guestId is required for booking"));
+  } else {
+    next();
+  }
+});
 
 export const Booking = mongoose.model<IBooking>("Booking", BookingSchema);

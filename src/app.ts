@@ -17,13 +17,14 @@ import authMiddleware from "./middlewares/auth/authenticate.middleware";
 Environment Setup
 ==============================*/
 // import "./workers/seatCleanup";
-// import "./workers/bookingCleanup";
+import "./workers/bookingCleanup";
 
 /*==============================
 Environment Setup
 ==============================*/
 const environment = process.env.NODE_ENV || "development";
-dotenv.config({ path: `.env.${environment}` });
+dotenv.config();
+// dotenv.config({ path: `.env.${environment}` });
 
 console.log(`Running in ${environment} mode`);
 
