@@ -10,6 +10,7 @@ interface ITicket extends Document {
   seatId: ObjectId;
   ticketId: number;
   qrCode: string;
+  guestId?: string;
 }
 
 const ticketSchema = new Schema<ITicket>({
@@ -21,7 +22,11 @@ const ticketSchema = new Schema<ITicket>({
   userId: {
     type: mongoose.Schema.Types.ObjectId,
     ref: "User",
-    required: true,
+    required: false,
+  },
+  guestId: {
+    type: String,
+    required: false,
   },
   showId: {
     type: mongoose.Schema.Types.ObjectId,

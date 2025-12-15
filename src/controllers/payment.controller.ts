@@ -1,86 +1,153 @@
 import { Request, Response } from "express";
 import { Booking, Payment, Seat } from "../models";
 import AppError from "../utils/AppError";
-import { PaymentStatus, SeatStatus } from "../@types/enums";
+import { PaymentStatus, SeatStatus, PaymentMethod } from "../@types/enums";
 import { generateQrCode } from "../utils/qrCodeGenerator";
 import { Ticket } from "../models/ticket.model";
 
+import mongoose from "mongoose";
+import { validatePayment } from "../utils/sslcommerz";
+
 export const paymentSuccessHandler = async (req: Request, res: Response) => {
-  const {
-    val_id,
-    tran_id,
-    card_type,
-    currency,
-    tran_date,
-    card_issuer,
-    card_brand,
-    card_issuer_country,
-    card_issuer_country_code,
-  } = req.body;
+  const { val_id, tran_id } = req.query;
+  console.log("query",req.query);
 
-  const booking = await Booking.findOne({ tran_id });
+  console.log(val_id, tran_id);
 
-  if (!booking) {
-    throw new AppError("Booking not found for this transaction!", 404);
-  }
+  const session = await mongoose.startSession();
+  session.startTransaction();
 
-  await Payment.create({
-    userId: booking.userId,
-    val_id,
-    card_type,
-    currency,
-    tran_date,
-    card_issuer,
-    card_brand,
-    card_issuer_country,
-    card_issuer_country_code,
-  });
+  try {
+    const booking = await Booking.findOne({ tran_id }).session(session);
 
-  // Update payment status and store details
-  booking.paymentStatus = PaymentStatus.PAID;
-  await booking.save();
-
-  for (const seatId of booking.seats) {
-    const seat = await Seat.findOne({
-      _id: seatId,
-      isHeld: true,
-      heldBy: booking.userId,
-      heldUntil: { $gte: new Date() },
-    });
-
-    if (!seat) {
-      throw new AppError("This seat is taken!", 404);
+    if (!booking) {
+      throw new AppError("Booking not found for this transaction!", 404);
     }
 
-    seat.status = SeatStatus.BOOKED;
-    await seat.save();
+    // Idempotency check: If already paid, just redirect
+    if (booking.paymentStatus === PaymentStatus.PAID) {
+      await session.commitTransaction();
+      return res.redirect(
+        `${process.env.CLIENT_ROOT}/paymentSuccessful?bookingId=${booking._id}`,
+      );
+    }
 
-    const ticketData = {
-      bookingId: booking._id,
-      userId: booking.userId,
-      showId: booking.showId,
-      seatId,
-    };
+    // Validate payment with SSLCommerz
+    const validationData = await validatePayment(val_id as string);
 
-    const qrCode = await generateQrCode(
-      booking._id.toString(),
-      seatId.toString(),
-      booking.showId.toString(),
-      booking.userId!.toString(),
+    // Validate amount (allow small floating point difference if needed, but strict is better)
+    if (
+      Number(validationData.amount) < booking.totalPrice ||
+      validationData.currency !== "BDT" // Assuming booking is in BDT
+    ) {
+      throw new AppError("Payment amount or currency mismatch", 400);
+    }
+
+    // Create Payment Record (check for duplicates first to be safe)
+    const existingPayment = await Payment.findOne({ val_id }).session(session);
+    if (!existingPayment) {
+      await Payment.create(
+        [
+          {
+            userId: booking.userId, // Can be null if guest
+            val_id,
+            card_type: validationData.card_type,
+            currency: validationData.currency,
+            tran_date: validationData.tran_date,
+            card_issuer: validationData.card_issuer,
+            card_brand: validationData.card_brand,
+            card_issuer_country: validationData.card_issuer_country,
+            card_issuer_country_code: validationData.card_issuer_country_code,
+          },
+        ],
+        { session },
+      );
+    }
+
+    // Update booking status
+    booking.paymentStatus = PaymentStatus.PAID;
+    // Map card_type to PaymentMethod
+    let paymentMethod = PaymentMethod.CARD;
+    const cardTypeUpper = validationData.card_type.toUpperCase();
+    if (cardTypeUpper.includes("BKASH")) {
+      paymentMethod = PaymentMethod.BKASH;
+    } else if (cardTypeUpper.includes("NAGAD")) {
+      paymentMethod = PaymentMethod.NAGAD;
+    }
+    booking.paymentMethod = paymentMethod;
+    await booking.save({ session });
+
+    // Update Seat Status
+    // Determine the holder (User ID or Guest ID)
+    const heldBy = booking.userId ? booking.userId.toString() : booking.guestId;
+
+    for (const seatId of booking.seats) {
+      const seat = await Seat.findOne({
+        _id: seatId,
+        isHeld: true,
+        heldBy: heldBy,
+        heldUntil: { $gte: new Date() },
+      }).session(session);
+
+      if (!seat) {
+        throw new AppError(
+          `Seat ${seatId} is no longer held by you or has expired.`,
+          400,
+        );
+      }
+
+      seat.status = SeatStatus.BOOKED;
+      seat.heldBy = null; // Optional: release hold ownership now that it's booked? 
+                          // Or keep it? The prompt asked for "Correct seat ownership logic (heldBy)".
+                          // Usually BOOKED seats imply ownership via Ticket/Booking. 
+                          // Clearing heldBy cleans up the "temp hold" state.
+      seat.heldUntil = null;
+      seat.isHeld = false;
+      await seat.save({ session });
+
+      // Create Ticket
+      const ticketData = {
+        bookingId: booking._id,
+        userId: booking.userId,
+        guestId: booking.guestId,
+        showId: booking.showId,
+        seatId,
+      };
+
+      const qrCode = await generateQrCode(
+        booking._id.toString(),
+        seatId.toString(),
+        booking.showId.toString(),
+        booking.userId?.toString() || booking.guestId!, 
+      );
+
+      await Ticket.create(
+        [
+          {
+            ...ticketData,
+            qrCode,
+          },
+        ],
+        { session },
+      );
+    }
+
+    await session.commitTransaction();
+
+    // Redirect to frontend
+    res.redirect(
+      `${process.env.CLIENT_ROOT}/paymentSuccessful?bookingId=${booking._id}`,
     );
-
-    const ticket = await Ticket.create({
-      ...ticketData,
-      qrCode,
-    });
-
-    console.log("---------ticket", ticket);
+  } catch (error: any) {
+    await session.abortTransaction();
+    console.error("Payment Success Error:", error);
+    const errorMessage = encodeURIComponent(
+      error.message || "Payment processing failed",
+    );
+    res.redirect(`${process.env.CLIENT_ROOT}/paymentFailure?error=${errorMessage}`);
+  } finally {
+    session.endSession();
   }
-
-  // Redirect to frontend
-  res.redirect(
-    `${process.env.CLIENT_ROOT}/paymentSuccessful?bookingId=${booking._id}`,
-  );
 };
 
 export const paymentFailHandler = async (req: Request, res: Response) => {

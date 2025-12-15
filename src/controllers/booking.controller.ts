@@ -33,86 +33,142 @@ export const getBookings = async (req: Request, res: Response) => {
 export const createBooking = async (req: Request, res: Response) => {
   const { userId, guestId, showId, screenId, movieId, seats } = req.body;
 
-  const heldUntil = new Date(Date.now() + 5 * 60 * 1000);
+  const session = await mongoose.startSession();
+  session.startTransaction();
 
-  if (userId && !ObjectId.isValid(userId)) {
-    const user = await User.findById(userId);
-    if (!user) {
-      throw new AppError("Provide valid User!", 400);
+  try {
+    const heldUntil = new Date(Date.now() + 5 * 60 * 1000);
+
+    if (userId && !ObjectId.isValid(userId)) {
+      const user = await User.findById(userId).session(session);
+      if (!user) {
+        throw new AppError("Provide valid User!", 400);
+      }
     }
-  }
 
-  const show = await Show.findById(showId);
+    const show = await Show.findById(showId).session(session);
 
-  if (!ObjectId.isValid(showId) || !show) {
-    throw new AppError("Provide valid Show!", 400);
-  }
+    if (!ObjectId.isValid(showId) || !show) {
+      throw new AppError("Provide valid Show!", 400);
+    }
 
-  const screen = await Screen.findById(screenId);
+    const screen = await Screen.findById(screenId).session(session);
 
-  if (!ObjectId.isValid(screenId) || !screen) {
-    throw new AppError("Provide valid Screen!", 400);
-  }
+    if (!ObjectId.isValid(screenId) || !screen) {
+      throw new AppError("Provide valid Screen!", 400);
+    }
 
-  const movie = await Movie.findById(movieId);
+    const movie = await Movie.findById(movieId).session(session);
 
-  if (!ObjectId.isValid(movieId) || !movie) {
-    throw new AppError("Provide valid User!", 400);
-  }
+    if (!ObjectId.isValid(movieId) || !movie) {
+      throw new AppError("Provide valid Movie!", 400);
+    }
 
-  if (seats.length <= 0) {
-    throw new AppError("No seats selected!", 400);
-  }
+    if (seats.length <= 0) {
+      throw new AppError("No seats selected!", 400);
+    }
 
-  const seatDocs = await Seat.find({ _id: { $in: seats } });
+    // Lock seats to prevent concurrent modification
+    const seatDocs = await Seat.find({ _id: { $in: seats } }).session(session);
 
-  if (seatDocs.length !== seats.length) {
-    throw new AppError(
-      "One or more selected seats do not exist for this screen",
-      400,
+    if (seatDocs.length !== seats.length) {
+      throw new AppError(
+        "One or more selected seats do not exist for this screen",
+        400,
+      );
+    }
+
+    // Check availability inside the transaction
+    const unavailableSeats = seatDocs.filter((seat) => {
+      // 1. Check if already booked
+      if (seat.status === SeatStatus.BOOKED) return true;
+
+      // 2. Check strict hold ownership
+      if (seat.isHeld && seat.heldUntil && seat.heldUntil > new Date()) {
+        const heldBy = seat.heldBy ? seat.heldBy.toString() : null;
+        const currentUserId = userId ? userId.toString() : null;
+        const currentGuestId = guestId ? guestId.toString() : null;
+
+        // Allow if held by current User OR current Guest
+        // Note: We assume "heldBy" stores the ID string (User ID or Guest ID)
+        if (heldBy === currentUserId || heldBy === currentGuestId) {
+          return false; // Available for THIS user
+        }
+
+        return true; // Held by someone else
+      }
+
+      return false; // Not held or expired
+    });
+
+    if (unavailableSeats.length > 0) {
+      throw new AppError(
+        "One or more seats are already booked or held by another user",
+        400,
+      );
+    }
+
+    const existingBookings = await Booking.find({
+      showId,
+      seats: { $in: seats },
+      isCancelled: false, // Don't count cancelled bookings? Or should we relying purely on seat status?
+      // Existing logic relied on this check, but seat status is source of truth.
+      // Keeping it butscoped to session
+    }).session(session);
+
+    if (existingBookings.length > 0) {
+      // Double check active bookings
+       const activeBookings = existingBookings.filter(b => b.paymentStatus !== PaymentStatus.FAILED && !b.isCancelled);
+       if(activeBookings.length > 0) {
+          throw new AppError("These seats are already booked (booking check)", 400);
+       }
+    }
+
+    const totalPrice = show.basePrice * seatDocs.length;
+
+    const newBooking = await Booking.create(
+      [
+        {
+          userId,
+          showId,
+          screenId,
+          guestId,
+          movieId,
+          seats,
+          totalPrice,
+          paymentStatus: PaymentStatus.PENDING,
+          expiresAt: new Date(Date.now() + 5 * 60 * 1000),
+        },
+      ],
+      { session },
     );
-  }
 
-  const existingBookings = await Booking.find({
-    showId,
-    seats: { $in: seats },
-  });
-
-  if (existingBookings.length > 0) {
-    throw new AppError("These seats are already booked", 400);
-  }
-
-  const totalPrice = show.basePrice * seatDocs.length;
-
-  const newBooking = await Booking.create({
-    userId,
-    showId,
-    screenId,
-    guestId,
-    movieId,
-    seats,
-    totalPrice,
-    paymentStatus: PaymentStatus.PENDING,
-    expiresAt: new Date(Date.now() + 5 * 60 * 1000),
-  });
-
-  await Seat.updateMany(
-    { _id: { $in: seats } },
-    {
-      $set: {
-        isHeld: true,
-        heldBy: userId,
-        heldUntil,
-        status: SeatStatus.BLOCKED,
+    await Seat.updateMany(
+      { _id: { $in: seats } },
+      {
+        $set: {
+          isHeld: true,
+          heldBy: userId || guestId,
+          heldUntil,
+          status: SeatStatus.BLOCKED,
+        },
       },
-    },
-  );
+      { session },
+    );
 
-  res.status(201).json({
-    success: true,
-    message: "New booking!",
-    data: newBooking,
-  });
+    await session.commitTransaction();
+
+    res.status(201).json({
+      success: true,
+      message: "New booking created!",
+      data: newBooking[0],
+    });
+  } catch (error) {
+    await session.abortTransaction();
+    throw error;
+  } finally {
+    session.endSession();
+  }
 };
 
 export const updateBooking = async (req: Request, res: Response) => {
@@ -132,10 +188,16 @@ export const initiatePayment = async (req: Request, res: Response) => {
     throw new AppError("Booking not found!", 404);
   }
 
-  const user = await User.findById(booking.userId);
+  if (booking.paymentStatus === PaymentStatus.PAID) {
+     throw new AppError("Booking is already paid!", 400);
+  }
 
-  if (!user) {
-    throw new AppError("User not found!", 404);
+  let user = null;
+  if (booking.userId) {
+    user = await User.findById(booking.userId);
+    if (!user) {
+      throw new AppError("User not found!", 404);
+    }
   }
 
   const paymentData = preaparePaymentData(booking, user);
@@ -167,11 +229,9 @@ export const initiatePayment = async (req: Request, res: Response) => {
 };
 
 export const cleanupExpiredBookings = async () => {
-  const fiveMinutesAgo = new Date(Date.now() - 5 * 60 * 1000);
-
   const expiredBookings = await Booking.find({
     paymentStatus: { $ne: PaymentStatus.PAID },
-    createdAt: { $lt: fiveMinutesAgo },
+    expiresAt: { $lt: new Date() },
   });
 
   if (!expiredBookings.length) return;
@@ -181,7 +241,14 @@ export const cleanupExpiredBookings = async () => {
   for (const booking of expiredBookings) {
     await Seat.updateMany(
       { _id: { $in: booking.seats } },
-      { $set: { status: "available" } },
+      {
+        $set: {
+          status: SeatStatus.AVAILABLE,
+          isHeld: false,
+          heldBy: null,
+          heldUntil: null,
+        },
+      },
     );
     await Booking.findByIdAndDelete(booking._id);
   }
