@@ -118,10 +118,15 @@ export const createBooking = async (req: Request, res: Response) => {
 
     if (existingBookings.length > 0) {
       // Double check active bookings
-       const activeBookings = existingBookings.filter(b => b.paymentStatus !== PaymentStatus.FAILED && !b.isCancelled);
-       if(activeBookings.length > 0) {
-          throw new AppError("These seats are already booked (booking check)", 400);
-       }
+      const activeBookings = existingBookings.filter(
+        (b) => b.paymentStatus !== PaymentStatus.FAILED && !b.isCancelled,
+      );
+      if (activeBookings.length > 0) {
+        throw new AppError(
+          "These seats are already booked (booking check)",
+          400,
+        );
+      }
     }
 
     const totalPrice = show.basePrice * seatDocs.length;
@@ -189,7 +194,7 @@ export const initiatePayment = async (req: Request, res: Response) => {
   }
 
   if (booking.paymentStatus === PaymentStatus.PAID) {
-     throw new AppError("Booking is already paid!", 400);
+    throw new AppError("Booking is already paid!", 400);
   }
 
   let user = null;
