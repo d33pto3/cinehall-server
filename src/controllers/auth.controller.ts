@@ -24,7 +24,9 @@ const getCookieOptions = () => ({
 });
 
 export const getUser = async (req: Request, res: Response) => {
-  const token = req.cookies.token;
+  const token = req.cookies["cinehall-token"];
+
+  console.log("token", token);
 
   if (!token) {
     throw new AppError("Not authenticated", 401);
@@ -93,7 +95,7 @@ export const firebaseLogin = async (req: Request, res: Response) => {
   const token = createToken(user._id, user.role);
 
   // Set cookie
-  res.cookie("token", token, getCookieOptions());
+  res.cookie("cinehall-token", token, getCookieOptions());
 
   // Return user data
   res.status(200).json({
@@ -136,7 +138,7 @@ export const register = async (req: Request, res: Response) => {
   const token = createToken(user._id, user.role);
 
   // Set cookie
-  res.cookie("token", token, getCookieOptions());
+  res.cookie("cinehall-token", token, getCookieOptions());
 
   res.status(201).json({
     success: true,
@@ -181,7 +183,7 @@ export const emailPasswordLogin = async (req: Request, res: Response) => {
   const token = createToken(user._id, user.role);
 
   // Set cookie
-  res.cookie("token", token, getCookieOptions());
+  res.cookie("cinehall-token", token, getCookieOptions());
 
   res.status(200).json({
     success: true,
@@ -198,7 +200,7 @@ export const emailPasswordLogin = async (req: Request, res: Response) => {
 
 export const logout = async (req: Request, res: Response): Promise<void> => {
   // Clear the token cookie
-  res.clearCookie("token", {
+  res.clearCookie("cinehall-token", {
     httpOnly: true,
     secure: process.env.NODE_ENV === "production",
     sameSite: process.env.NODE_ENV === "production" ? "none" : "lax",

@@ -159,20 +159,33 @@ export const getHalls = async (_req: Request, res: Response) => {
 export const getHallsByMovieAndDate = async (req: Request, res: Response) => {
   const { movieId, date } = req.query;
 
-  if (!movieId || !date) {
-    throw new AppError("movieId and date required", 400);
+  if (!movieId) {
+    throw new AppError("movieId is required", 400);
   }
 
   if (!mongoose.Types.ObjectId.isValid(movieId as string)) {
     throw new AppError("Movie is not valid", 400);
   }
 
-  // Convert provided date to a range for the full day
-  const startOfDay = new Date(date as string);
-  startOfDay.setHours(0, 0, 0, 0);
+  let startOfDay: Date;
+  let endOfDay: Date;
 
-  const endOfDay = new Date(date as string);
-  endOfDay.setHours(23, 59, 59, 999);
+  if (date) {
+    // If date is provided, use that specific day
+    startOfDay = new Date(date as string);
+    startOfDay.setHours(0, 0, 0, 0);
+
+    endOfDay = new Date(date as string);
+    endOfDay.setHours(23, 59, 59, 999);
+  } else {
+    // If date is not provided, use current day to 5 days forward
+    startOfDay = new Date();
+    startOfDay.setHours(0, 0, 0, 0);
+
+    endOfDay = new Date();
+    endOfDay.setDate(endOfDay.getDate() + 5);
+    endOfDay.setHours(23, 59, 59, 999);
+  }
 
   // Aggregation pipeline
   const halls = await Show.aggregate([
@@ -212,7 +225,9 @@ export const getHallsByMovieAndDate = async (req: Request, res: Response) => {
 
   res.status(200).json({
     success: true,
-    message: "Fetched halls showing the movie on this date",
+    message: date
+      ? "Fetched halls showing the movie on this date"
+      : "Fetched halls showing the movie from today to 5 days forward",
     count: halls.length,
     data: halls,
   });
