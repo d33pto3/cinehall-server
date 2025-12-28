@@ -8,7 +8,9 @@ import {
   deleteShow,
   createShow,
   getShowsForHallowner,
-  // getShowsForMovieByDate,
+  getShowsForMovieByDate,
+  getAvailableSlots,
+  getShowByDateSlotAndScreen,
 } from "../controllers/show.controller";
 import restrictTo from "../middlewares/auth/authorize.middleware";
 import { Role } from "../models/user.model";
@@ -31,7 +33,11 @@ router
   .get(authMiddleware, restrictTo(Role.HALLOWNER), asyncHandler(getShowById))
   .put(authMiddleware, restrictTo(Role.HALLOWNER), asyncHandler(updateShow));
 
-// router.route("").get(asyncHandler(getShowsForMovieByDate));
+router.route("/by-movie").get(asyncHandler(getShowsForMovieByDate));
+
+router.route("/showtime").get(asyncHandler(getAvailableSlots));
+
+router.route("/by-details").get(asyncHandler(getShowByDateSlotAndScreen));
 
 router
   .route("/:id")
