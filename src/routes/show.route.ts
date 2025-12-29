@@ -11,6 +11,7 @@ import {
   getShowsForMovieByDate,
   getAvailableSlots,
   getShowByDateSlotAndScreen,
+  getGlobalSchedule,
 } from "../controllers/show.controller";
 import restrictTo from "../middlewares/auth/authorize.middleware";
 import { Role } from "../models/user.model";
@@ -38,6 +39,7 @@ router.route("/by-movie").get(asyncHandler(getShowsForMovieByDate));
 router.route("/showtime").get(asyncHandler(getAvailableSlots));
 
 router.route("/by-details").get(asyncHandler(getShowByDateSlotAndScreen));
+router.route("/schedule").get(asyncHandler(getGlobalSchedule));
 
 router
   .route("/:id")
