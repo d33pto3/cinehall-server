@@ -162,8 +162,8 @@ export const getShowsForHallowner = async (req: Request, res: Response) => {
 
 export const getShowById = async (req: Request, res: Response) => {
   const show = await Show.findById(req.params.id)
-    .populate("movieId", "title")
-    .populate("screenId", "name");
+    .populate("movieId", "title duration genre posterUrl")
+    .populate("screenId", "name rows columns");
 
   if (!show) {
     throw new AppError("Not found Show!", 404);
