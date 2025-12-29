@@ -162,8 +162,12 @@ export const getShowsForHallowner = async (req: Request, res: Response) => {
 
 export const getShowById = async (req: Request, res: Response) => {
   const show = await Show.findById(req.params.id)
-    .populate("movieId", "title duration genre posterUrl")
-    .populate("screenId", "name rows columns");
+    .populate("movieId", "title duration genre imageUrl")
+    .populate({
+      path: "screenId",
+      select: "name rows columns hallId",
+      populate: { path: "hallId", select: "name address" },
+    });
 
   if (!show) {
     throw new AppError("Not found Show!", 404);
@@ -262,6 +266,41 @@ export const deleteShow = async (req: Request, res: Response) => {
   res
     .status(200)
     .json({ success: true, message: "Delete Show!", data: deletedShow });
+};
+
+export const getGlobalSchedule = async (req: Request, res: Response) => {
+  const dateStr = req.query.date as string;
+  const hallId = req.query.hallId as string;
+
+  const query: FilterQuery<IShow> = {};
+
+  if (dateStr) {
+    const start = new Date(dateStr);
+    start.setHours(0, 0, 0, 0);
+    const end = new Date(dateStr);
+    end.setHours(23, 59, 59, 999);
+    query.startTime = { $gte: start, $lte: end };
+  }
+
+  if (hallId && mongoose.Types.ObjectId.isValid(hallId)) {
+    const screens = await Screen.find({ hallId }).select("_id");
+    const screenIds = screens.map((s) => s._id);
+    query.screenId = { $in: screenIds };
+  }
+
+  const shows = await Show.find(query)
+    .populate("movieId")
+    .populate({
+      path: "screenId",
+      populate: { path: "hallId" },
+    })
+    .sort({ startTime: 1 });
+
+  res.status(200).json({
+    success: true,
+    message: "Fetched global schedule",
+    data: shows,
+  });
 };
 
 export const getAvailableSlots = async (req: Request, res: Response) => {
@@ -406,7 +445,7 @@ export const getShowByDateSlotAndScreen = async (
     slot: slot,
     startTime: { $gte: start, $lte: end },
   })
-    .populate("movieId", "title duration genre posterUrl")
+    .populate("movieId", "title duration genre imageUrl")
     .populate("screenId", "name hallId rows columns");
 
   if (!show) {

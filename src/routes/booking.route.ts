@@ -8,6 +8,7 @@ import {
   deleteBooking,
   getBookingById,
   initiatePayment,
+  getBookingsByUser,
 } from "../controllers/booking.controller";
 import asyncHandler from "../middlewares/asyncHandler";
 
@@ -16,6 +17,8 @@ router
   .route("/")
   .get(asyncHandler(getBookings))
   .post(asyncHandler(createBooking));
+
+router.get("/user/:userId", asyncHandler(getBookingsByUser));
 
 router
   .route("/:id")

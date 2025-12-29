@@ -29,6 +29,27 @@ export const getBookings = async (req: Request, res: Response) => {
   });
 };
 
+// Get bookings by user
+export const getBookingsByUser = async (req: Request, res: Response) => {
+  const { userId } = req.params;
+
+  if (!ObjectId.isValid(userId)) {
+    throw new AppError("Invalid user ID", 400);
+  }
+
+  const bookings = await Booking.find({ userId })
+    .populate("movieId", "title imageUrl")
+    .populate("showId", "startTime endTime")
+    .populate("seats", "seatNumber")
+    .sort({ createdAt: -1 });
+
+  res.status(200).json({
+    success: true,
+    message: "User bookings fetched successfully",
+    bookings,
+  });
+};
+
 // Create a new booking
 export const createBooking = async (req: Request, res: Response) => {
   const { userId, guestId, showId, screenId, movieId, seats } = req.body;

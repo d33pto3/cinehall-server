@@ -9,18 +9,37 @@ import mongoose from "mongoose";
 import { validatePayment } from "../utils/sslcommerz";
 
 export const paymentSuccessHandler = async (req: Request, res: Response) => {
-  const { val_id, tran_id } = req.query;
-  console.log("query",req.query);
+  const { val_id: queryValId, tran_id: queryTranId, bookingId } = req.query;
+  const { val_id: bodyValId, tran_id: bodyTranId } = req.body;
 
-  console.log(val_id, tran_id);
+  const val_id = (bodyValId || queryValId) as string;
+  const tran_id = (bodyTranId || queryTranId) as string;
+
+  console.log("Payment callback received:", { 
+    val_id, 
+    tran_id, 
+    queryBookingId: bookingId,
+    query: req.query,
+    body: req.body 
+  });
 
   const session = await mongoose.startSession();
   session.startTransaction();
 
   try {
-    const booking = await Booking.findOne({ tran_id }).session(session);
+    let booking;
+    if (tran_id) {
+      booking = await Booking.findOne({
+        $or: [{ _id: tran_id }, { tran_id: tran_id }],
+      }).session(session);
+    }
+
+    if (!booking && bookingId) {
+      booking = await Booking.findById(bookingId).session(session);
+    }
 
     if (!booking) {
+      console.error("Booking not found with:", { tran_id, bookingId });
       throw new AppError("Booking not found for this transaction!", 404);
     }
 
@@ -151,23 +170,39 @@ export const paymentSuccessHandler = async (req: Request, res: Response) => {
 };
 
 export const paymentFailHandler = async (req: Request, res: Response) => {
-  const { tran_id } = req.body;
+  const { tran_id: bodyTran_id, bookingId: bodyBookingId } = req.body;
+  const { tran_id: queryTran_id, bookingId: queryBookingId } = req.query;
 
-  await Booking.findByIdAndUpdate(tran_id, {
-    paymentStatus: "FAILED",
-  });
+  const tran_id = bodyTran_id || queryTran_id || bodyBookingId || queryBookingId;
 
-  return res.redirect(`${process.env.CLIENT_ROOT}/paymentFailure`);
+  console.log("Payment fail callback:", { tran_id, body: req.body, query: req.query });
+
+  if (tran_id) {
+    await Booking.findOneAndUpdate(
+      { $or: [{ _id: tran_id }, { tran_id: tran_id }] },
+      { paymentStatus: PaymentStatus.FAILED }
+    );
+  }
+
+  return res.redirect(`${process.env.CLIENT_ROOT}/paymentFailure?error=Payment failed. Please try again.`);
 };
 
 export const paymentCancelHandler = async (req: Request, res: Response) => {
-  const { tran_id } = req.body;
+  const { tran_id: bodyTran_id, bookingId: bodyBookingId } = req.body;
+  const { tran_id: queryTran_id, bookingId: queryBookingId } = req.query;
 
-  await Booking.findByIdAndUpdate(tran_id, {
-    paymentStatus: "CANCELLED",
-  });
+  const tran_id = bodyTran_id || queryTran_id || bodyBookingId || queryBookingId;
 
-  return res.redirect(`${process.env.CLIENT_ROOT}/paymentCancelled`);
+  console.log("Payment cancel callback:", { tran_id, body: req.body, query: req.query });
+
+  if (tran_id) {
+    await Booking.findOneAndUpdate(
+      { $or: [{ _id: tran_id }, { tran_id: tran_id }] },
+      { paymentStatus: PaymentStatus.CANCELLED }
+    );
+  }
+
+  return res.redirect(`${process.env.CLIENT_ROOT}/paymentFailure?error=Payment cancelled by user.`);
 };
 
 export const paymentNotificationHandler = async (
