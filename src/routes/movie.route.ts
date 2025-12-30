@@ -9,6 +9,7 @@ import {
   updateMovie,
   deleteMovie,
   nowShowingMovies,
+  comingSoonMovies,
 } from "../controllers/movie.controller";
 import asyncHandler from "../middlewares/asyncHandler";
 
@@ -16,6 +17,7 @@ import asyncHandler from "../middlewares/asyncHandler";
 router.route("/").get(asyncHandler(getMovies)).post(asyncHandler(createMovie));
 
 router.route("/now-showing").get(asyncHandler(nowShowingMovies));
+router.route("/coming-soon").get(asyncHandler(comingSoonMovies));
 
 router
   .route("/:id")
