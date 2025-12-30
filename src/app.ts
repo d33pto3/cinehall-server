@@ -1,7 +1,14 @@
 /*==============================
-Core Packages and Imports
+Environment Setup
 ==============================*/
 import dotenv from "dotenv";
+if (process.env.NODE_ENV !== "production") {
+  dotenv.config({ path: ".env.development" });
+}
+
+/*==============================
+Core Packages and Imports
+==============================*/
 import express, { Request, Response } from "express";
 import cors from "cors";
 import bodyParser from "body-parser";
@@ -20,15 +27,6 @@ Environment Setup
 import "./workers/bookingCleanup";
 
 /*==============================
-Environment Setup
-==============================*/
-const environment = process.env.NODE_ENV || "development";
-dotenv.config();
-// dotenv.config({ path: `.env.${environment}` });
-
-console.log(`Running in ${environment} mode`);
-
-/*==============================
 App Initialization
 ==============================*/
 const app = express();
@@ -42,13 +40,18 @@ connectToDB();
 /*==============================
 Middlewares
 ==============================*/
+const allowedOrigins =
+  process.env.NODE_ENV === "production"
+    ? [process.env.FRONTEND_URL!]
+    : [
+        "http://localhost:3000",
+        "http://localhost:8081",
+        "http://localhost:5173",
+      ];
+
 app.use(
   cors({
-    origin: [
-      "http://localhost:3000",
-      "http://localhost:8081",
-      "http://localhost:5173",
-    ],
+    origin: allowedOrigins,
     credentials: true,
   }),
 );
@@ -56,7 +59,6 @@ app.use(bodyParser.urlencoded({ extended: false }));
 app.use(bodyParser.json());
 app.use(requestLogger);
 app.use(cookieParser());
-app.use(errorMiddleware);
 
 /*==========================
 Routes
@@ -79,8 +81,8 @@ app.get("/api/v1/test-auth", authMiddleware, (req: Request, res: Response) => {
 /*========================== 
 Error Handling
 ==========================*/
-app.use(errorMiddleware); // Error handling middleware
 app.use(handleNotFound); // Handle endpoints not Found
+app.use(errorMiddleware);
 
 /*==========================
 Start the Server
@@ -89,5 +91,5 @@ app.listen(PORT, (err) => {
   if (err) {
     console.log(err);
   }
-  console.log("listening on port " + process.env.PORT);
+  console.log(`listening on port ${PORT}`);
 });
