@@ -12,3 +12,16 @@ Running in development mode
 listening on port 8000
 Successfully connected to MongoDB server
 GET /shows/6950aeecc5c029ab695402ce [1m304[22m 549 ms
+[32m[nodemon] restarting due to changes...[39m
+[32m[nodemon] restarting due to changes...[39m
+[32m[nodemon] restarting due to changes...[39m
+[32m[nodemon] restarting due to changes...[39m
+[32m[nodemon] starting `ts-node src/app.ts`[39m
+[32m[nodemon] restarting child process[39m
+[32m[nodemon] restarting child process[39m
+[32m[nodemon] restarting child process[39m
+[32m[nodemon] restarting child process[39m
+[CRON] Booking cleanup job scheduled
+Running in development mode
+listening on port 8000
+Successfully connected to MongoDB server
