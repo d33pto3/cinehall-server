@@ -19,7 +19,7 @@ const getCookieOptions = () => ({
       : ("lax" as const),
   // For cross-origin requests in production (mobile app), use sameSite: 'none' and secure: true
   ...(process.env.NODE_ENV === "production" && {
-    domain: process.env.COOKIE_DOMAIN, // e.g., ".yourdomain.com"
+    domain: process.env.COOKIE_DOMAIN,
   }),
 });
 
@@ -107,6 +107,7 @@ export const firebaseLogin = async (req: Request, res: Response) => {
       role: user.role,
       avatar: user.avatar,
     },
+    token, // Return token in body
   });
 };
 
@@ -149,6 +150,7 @@ export const register = async (req: Request, res: Response) => {
       role: user.role,
       phone: user.phone,
     },
+    token, // Return token in body
   });
 };
 
@@ -195,6 +197,7 @@ export const emailPasswordLogin = async (req: Request, res: Response) => {
       phone: user?.phone,
       avatar: user?.avatar,
     },
+    token, // Return token in body
   });
 };
 
