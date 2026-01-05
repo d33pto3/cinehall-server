@@ -2,14 +2,34 @@
 import { Request, Response } from "express";
 import AppError from "../utils/AppError";
 import { Movie, Show } from "../models";
+import { IMovie } from "../models/movie.model";
+import { buildSearchQuery } from "../utils/searchQueryBuilder";
+import { paginate } from "../utils/paginate";
 
 // Get all movies
-export const getMovies = async (_req: Request, res: Response) => {
-  const movies = await Movie.find();
+export const getMovies = async (req: Request, res: Response) => {
+  const search = req.query.search as string;
+  const page = parseInt(req.query.page as string) || 1;
+  const limit = parseInt(req.query.limit as string) || 10;
 
-  res
-    .status(200)
-    .json({ success: true, message: "Fetch all movies", data: movies });
+  // Build dynamic search query
+  const filter = buildSearchQuery<IMovie>(search, ["title", "genre"]);
+
+  const paginatedResult = await paginate(Movie, {
+    page,
+    limit,
+    filter,
+    sort: "releaseDate:desc",
+  });
+
+  res.status(200).json({
+    success: true,
+    message: "Fetch all movies",
+    pages: paginatedResult.pages,
+    page: paginatedResult.page,
+    count: paginatedResult.total,
+    data: paginatedResult.data,
+  });
 };
 
 //create a new movie
