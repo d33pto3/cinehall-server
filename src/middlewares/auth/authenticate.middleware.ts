@@ -9,7 +9,7 @@ const authMiddleware: RequestHandler = async (
   next: NextFunction,
 ) => {
   // 1. Get token from cookies
-  const token = req.cookies?.token;
+  const token = req.cookies?.["cinehall-token"];
 
   if (!token) {
     return next(new AppError("User unauthorized", 401));
