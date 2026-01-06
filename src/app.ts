@@ -49,7 +49,7 @@ const allowedOrigins =
         "http://localhost:8082",
         "http://localhost:5173",
         "https://cinehall-client.vercel.app",
-        "*"
+        "https://cinehall-client-rc7h.vercel.app",
       ];
 
 app.use(
