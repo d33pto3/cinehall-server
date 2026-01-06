@@ -9,6 +9,7 @@ import screenRouter from "./screen.route";
 import seatRouter from "./seat.route";
 import paymentRouter from "./payment.route";
 import ticketRouter from "./ticket.route";
+import dashboardRouter from "./dashboard.route";
 
 const router = Router();
 
@@ -26,5 +27,6 @@ router.use("/screen", screenRouter);
 router.use("/seat", seatRouter);
 router.use("/payment", paymentRouter);
 router.use("/ticket", ticketRouter);
+router.use("/dashboard", dashboardRouter);
 
 export default router;
