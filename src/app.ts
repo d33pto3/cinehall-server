@@ -42,7 +42,10 @@ Middlewares
 ==============================*/
 const allowedOrigins =
   process.env.NODE_ENV === "production"
-    ? [process.env.FRONTEND_URL!]
+    ? [
+        "https://cinehall-client.vercel.app",
+        "https://cinehall-client-rc7h.vercel.app",
+      ]
     : [
         "http://localhost:3000",
         "http://localhost:8081",
