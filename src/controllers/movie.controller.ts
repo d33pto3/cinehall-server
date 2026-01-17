@@ -131,22 +131,22 @@ export const nowShowingMovies = async (req: Request, res: Response) => {
   });
 };
 
-export const comingSoonMovies = async (req: Request, res: Response) => {
-  const today = new Date();
+// export const comingSoonMovies = async (req: Request, res: Response) => {
+//   const today = new Date();
 
-  // Coming soon are movies with release date in future
-  const movies = await Movie.find({
-    releaseDate: { $gt: today },
-  })
-    .sort({ releaseDate: 1 }) // Closest release date first
-    .lean();
+//   // Coming soon are movies with release date in future
+//   const movies = await Movie.find({
+//     releaseDate: { $gt: today },
+//   })
+//     .sort({ releaseDate: 1 }) // Closest release date first
+//     .lean();
 
-  res.status(200).json({
-    success: true,
-    message: "Fetch all coming soon movies",
-    data: movies,
-  });
-};
+//   res.status(200).json({
+//     success: true,
+//     message: "Fetch all coming soon movies",
+//     data: movies,
+//   });
+// };
 
 export const comingSoonMovies = async (req: Request, res: Response) => {
   const today = new Date();
