@@ -3,7 +3,7 @@ import { IBooking } from "../models/booking.model";
 import { IUser } from "../models/user.model";
 
 const ObjectId = mongoose.Types.ObjectId;
-const SSLCOMMERZ_BASE_URL = "http://localhost:8000/api/v1";
+const SSLCOMMERZ_BASE_URL = process.env.API_URL || "http://localhost:8000/api/v1";
 const PRODUCT_DETAILS = {
   name: "Movie Ticket",
   category: "Ticket",

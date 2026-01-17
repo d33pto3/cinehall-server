@@ -1,7 +1,14 @@
 /*==============================
-Core Packages and Imports
+Environment Setup
 ==============================*/
 import dotenv from "dotenv";
+if (process.env.NODE_ENV !== "production") {
+  dotenv.config({ path: ".env.development" });
+}
+
+/*==============================
+Core Packages and Imports
+==============================*/
 import express, { Request, Response } from "express";
 import cors from "cors";
 import bodyParser from "body-parser";
@@ -20,15 +27,6 @@ Environment Setup
 import "./workers/bookingCleanup";
 
 /*==============================
-Environment Setup
-==============================*/
-const environment = process.env.NODE_ENV || "development";
-dotenv.config();
-// dotenv.config({ path: `.env.${environment}` });
-
-console.log(`Running in ${environment} mode`);
-
-/*==============================
 App Initialization
 ==============================*/
 const app = express();
@@ -42,13 +40,39 @@ connectToDB();
 /*==============================
 Middlewares
 ==============================*/
+const allowedOrigins =
+  process.env.NODE_ENV === "production"
+    ? [
+        "https://cinehall-client.vercel.app",
+        "https://cinehall-client-rc7h.vercel.app",
+      ]
+    : [
+        "http://localhost:3000",
+        "http://localhost:8081",
+        "http://localhost:8082",
+        "http://localhost:5173",
+        "https://cinehall-client.vercel.app",
+        "https://cinehall-client-rc7h.vercel.app",
+      ];
+
+// CORS configuration
 app.use(
   cors({
-    origin: [
-      "http://localhost:3000",
-      "http://localhost:8081",
-      "http://localhost:5173",
-    ],
+    origin: (origin, callback) => {
+      // Allow requests with no origin (like mobile apps or curl requests)
+      if (!origin) return callback(null, true);
+
+      if (process.env.NODE_ENV === "production") {
+        if (allowedOrigins.indexOf(origin) !== -1) {
+          callback(null, true);
+        } else {
+          callback(new Error("Not allowed by CORS"));
+        }
+      } else {
+        // In development, allow all origins
+        callback(null, true);
+      }
+    },
     credentials: true,
   }),
 );
@@ -56,7 +80,6 @@ app.use(bodyParser.urlencoded({ extended: false }));
 app.use(bodyParser.json());
 app.use(requestLogger);
 app.use(cookieParser());
-app.use(errorMiddleware);
 
 /*==========================
 Routes
@@ -79,8 +102,8 @@ app.get("/api/v1/test-auth", authMiddleware, (req: Request, res: Response) => {
 /*========================== 
 Error Handling
 ==========================*/
-app.use(errorMiddleware); // Error handling middleware
 app.use(handleNotFound); // Handle endpoints not Found
+app.use(errorMiddleware);
 
 /*==========================
 Start the Server
@@ -89,5 +112,5 @@ app.listen(PORT, (err) => {
   if (err) {
     console.log(err);
   }
-  console.log("listening on port " + process.env.PORT);
+  console.log(`listening on port ${PORT}`);
 });

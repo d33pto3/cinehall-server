@@ -59,30 +59,60 @@ export const getScreensByHallMovieAndDate = async (
 ) => {
   const { hallId, movieId, date } = req.query;
 
-  if (!hallId || !movieId || !date) {
-    throw new AppError("hallId, movieId and date are required", 400);
+  if (!movieId) {
+    throw new AppError("movieId is required", 400);
   }
 
-  if (
-    !mongoose.Types.ObjectId.isValid(hallId as string) ||
-    !mongoose.Types.ObjectId.isValid(movieId as string)
-  ) {
-    throw new AppError("Invalid hallId or movieId", 400);
+  if (!mongoose.Types.ObjectId.isValid(movieId as string)) {
+    throw new AppError("Invalid movieId", 400);
   }
 
-  const startOfDay = new Date(date as string);
-  startOfDay.setHours(0, 0, 0, 0);
+  if (hallId && !mongoose.Types.ObjectId.isValid(hallId as string)) {
+    throw new AppError("Invalid hallId", 400);
+  }
 
-  const endOfDay = new Date(date as string);
-  endOfDay.setHours(23, 59, 59, 999);
+  // Build the match query
+  interface MatchQuery {
+    movieId: mongoose.Types.ObjectId;
+    startTime?: { $gte: Date; $lte: Date };
+  }
 
-  const screens = await Show.aggregate([
-    {
-      $match: {
-        movieId: new mongoose.Types.ObjectId(movieId as string),
-        startTime: { $gte: startOfDay, $lte: endOfDay },
-      },
-    },
+  const matchQuery: MatchQuery = {
+    movieId: new mongoose.Types.ObjectId(movieId as string),
+  };
+
+  // Add date filter if provided
+  if (date) {
+    const startOfDay = new Date(date as string);
+    startOfDay.setHours(0, 0, 0, 0);
+
+    const endOfDay = new Date(date as string);
+    endOfDay.setHours(23, 59, 59, 999);
+
+    matchQuery.startTime = { $gte: startOfDay, $lte: endOfDay };
+  }
+
+  type PipelineStage =
+    | { $match: MatchQuery | { "screen.hallId": mongoose.Types.ObjectId } }
+    | {
+        $lookup: {
+          from: string;
+          localField: string;
+          foreignField: string;
+          as: string;
+        };
+      }
+    | { $unwind: string }
+    | {
+        $group: {
+          _id: string;
+          name: { $first: string };
+          hallId: { $first: string };
+        };
+      };
+
+  const pipeline: PipelineStage[] = [
+    { $match: matchQuery },
     {
       $lookup: {
         from: "screens",
@@ -92,27 +122,112 @@ export const getScreensByHallMovieAndDate = async (
       },
     },
     { $unwind: "$screen" },
-    {
+  ];
+
+  // Add hallId filter if provided
+  if (hallId) {
+    pipeline.push({
       $match: {
         "screen.hallId": new mongoose.Types.ObjectId(hallId as string),
       },
+    });
+  }
+
+  // Group by screen
+  pipeline.push({
+    $group: {
+      _id: "$screen._id",
+      name: { $first: "$screen.name" },
+      hallId: { $first: "$screen.hallId" },
     },
-    {
-      $group: {
-        _id: "$screen._id",
-        name: { $first: "$screen.name" },
-        hallId: { $first: "$screen.hallId" },
-      },
-    },
-  ]);
+  });
+
+  const screens = await Show.aggregate(pipeline);
 
   res.status(200).json({
     success: true,
-    message: "Fetched screens showing the movie in this hall on this date",
+    message: "Fetched screens showing the movie",
     count: screens.length,
     data: screens,
   });
 };
+
+// export const getScreensByHallMovieAndDate = async (
+//   req: Request,
+//   res: Response,
+// ) => {
+//   const { hallId, movieId, date } = req.query;
+
+//   if (!hallId || !movieId) {
+//     throw new AppError("hallId and movieId are required", 400);
+//   }
+
+//   if (
+//     !mongoose.Types.ObjectId.isValid(hallId as string) ||
+//     !mongoose.Types.ObjectId.isValid(movieId as string)
+//   ) {
+//     throw new AppError("Invalid hallId or movieId", 400);
+//   }
+
+//   let startOfDay: Date;
+//   let endOfDay: Date;
+
+//   if (date) {
+//     // If date is provided, use that specific day
+//     startOfDay = new Date(date as string);
+//     startOfDay.setHours(0, 0, 0, 0);
+
+//     endOfDay = new Date(date as string);
+//     endOfDay.setHours(23, 59, 59, 999);
+//   } else {
+//     // If date is not provided, use current day to 5 days forward
+//     startOfDay = new Date();
+//     startOfDay.setHours(0, 0, 0, 0);
+
+//     endOfDay = new Date();
+//     endOfDay.setDate(endOfDay.getDate() + 5);
+//     endOfDay.setHours(23, 59, 59, 999);
+//   }
+
+//   const screens = await Show.aggregate([
+//     {
+//       $match: {
+//         movieId: new mongoose.Types.ObjectId(movieId as string),
+//         startTime: { $gte: startOfDay, $lte: endOfDay },
+//       },
+//     },
+//     {
+//       $lookup: {
+//         from: "screens",
+//         localField: "screenId",
+//         foreignField: "_id",
+//         as: "screen",
+//       },
+//     },
+//     { $unwind: "$screen" },
+//     {
+//       $match: {
+//         "screen.hallId": new mongoose.Types.ObjectId(hallId as string),
+//       },
+//     },
+//     {
+//       $group: {
+//         _id: "$screen._id",
+//         name: { $first: "$screen.name" },
+//         hallId: { $first: "$screen.hallId" },
+//       },
+//     },
+//   ]);
+
+//   res.status(200).json({
+//     success: true,
+//     message: date
+//       ? "Fetched screens showing the movie in this hall on this date"
+//       : "Fetched screens showing the movie in this hall from today to 5 days forward",
+//     count: screens.length,
+//     data: screens,
+//   });
+// };
 
 export const getScreensForHallowner = async (req: Request, res: Response) => {
   const search = req.query.search as string;

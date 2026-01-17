@@ -3,7 +3,7 @@ import { Request, Response } from "express";
 import AppError from "../utils/AppError";
 import { Hall, Movie, Screen, Show } from "../models";
 import { IShow, Slots } from "../models/show.model";
-import { FilterQuery, PopulateOptions } from "mongoose";
+import mongoose, { FilterQuery, PopulateOptions } from "mongoose";
 import { paginate } from "../utils/paginate";
 import { generateSeats } from "../utils/seatGenerator";
 
@@ -15,12 +15,27 @@ export const getShows = async (req: Request, res: Response) => {
   const movieId = Array.isArray(req.query.movieId)
     ? (req.query.movieId[0] as string)
     : (req.query.movieId as string | undefined);
+  const hallId = Array.isArray(req.query.hallId)
+    ? (req.query.hallId[0] as string)
+    : (req.query.hallId as string | undefined);
 
-  const query: FilterQuery<IShow> = {};
+  // Validate that movieId is provided
+  if (!movieId) {
+    res.status(400).json({
+      success: false,
+      message: "movieId is required",
+    });
+    return; // Early return without value
+  }
 
-  if (movieId) query.movieId = movieId;
+  const query: FilterQuery<IShow> = { movieId };
 
-  if (movieId) query.movieId = movieId;
+  // Add hallId filter if provided
+  if (hallId) {
+    query.screenId = hallId;
+  }
+
+  // Add date filter if provided
   if (date) {
     const start = new Date(date);
     start.setHours(0, 0, 0, 0);
@@ -147,8 +162,12 @@ export const getShowsForHallowner = async (req: Request, res: Response) => {
 
 export const getShowById = async (req: Request, res: Response) => {
   const show = await Show.findById(req.params.id)
-    .populate("movieId", "title")
-    .populate("screenId", "name");
+    .populate("movieId", "title duration genre imageUrl")
+    .populate({
+      path: "screenId",
+      select: "name rows columns hallId",
+      populate: { path: "hallId", select: "name address" },
+    });
 
   if (!show) {
     throw new AppError("Not found Show!", 404);
@@ -247,4 +266,199 @@ export const deleteShow = async (req: Request, res: Response) => {
   res
     .status(200)
     .json({ success: true, message: "Delete Show!", data: deletedShow });
+};
+
+export const getGlobalSchedule = async (req: Request, res: Response) => {
+  const dateStr = req.query.date as string;
+  const hallId = req.query.hallId as string;
+
+  const query: FilterQuery<IShow> = {};
+
+  if (dateStr) {
+    const start = new Date(dateStr);
+    start.setHours(0, 0, 0, 0);
+    const end = new Date(dateStr);
+    end.setHours(23, 59, 59, 999);
+    query.startTime = { $gte: start, $lte: end };
+  }
+
+  if (hallId && mongoose.Types.ObjectId.isValid(hallId)) {
+    const screens = await Screen.find({ hallId }).select("_id");
+    const screenIds = screens.map((s) => s._id);
+    query.screenId = { $in: screenIds };
+  }
+
+  const shows = await Show.find(query)
+    .populate("movieId")
+    .populate({
+      path: "screenId",
+      populate: { path: "hallId" },
+    })
+    .sort({ startTime: 1 });
+
+  res.status(200).json({
+    success: true,
+    message: "Fetched global schedule",
+    data: shows,
+  });
+};
+
+export const getAvailableSlots = async (req: Request, res: Response) => {
+  const date = Array.isArray(req.query.date)
+    ? (req.query.date[0] as string)
+    : (req.query.date as string | undefined);
+  const movieId = Array.isArray(req.query.movieId)
+    ? (req.query.movieId[0] as string)
+    : (req.query.movieId as string | undefined);
+  const hallId = Array.isArray(req.query.hallId)
+    ? (req.query.hallId[0] as string)
+    : (req.query.hallId as string | undefined);
+
+  // Validate required fields
+  if (!movieId || !date) {
+    res.status(400).json({
+      success: false,
+      message: "movieId and date are required",
+    });
+    return;
+  }
+
+  // Build date range
+  const start = new Date(date);
+  start.setHours(0, 0, 0, 0);
+  const end = new Date(date);
+  end.setHours(23, 59, 59, 999);
+
+  interface MatchStage {
+    movieId: mongoose.Types.ObjectId;
+    startTime: { $gte: Date; $lte: Date };
+    screenId?: { $in: mongoose.Types.ObjectId[] };
+  }
+
+  const matchStage: MatchStage = {
+    movieId: new mongoose.Types.ObjectId(movieId),
+    startTime: { $gte: start, $lte: end },
+  };
+
+  // If hallId provided, we need to filter by screens in that hall
+  if (hallId) {
+    // First get screens in this hall
+    const screens = await Screen.find({
+      hallId: new mongoose.Types.ObjectId(hallId),
+    }).select("_id");
+
+    const screenIds = screens.map((s) => s._id);
+
+    if (screenIds.length === 0) {
+      res.status(200).json({
+        success: true,
+        message: "No screens found in this hall",
+        data: { availableSlots: [] },
+      });
+      return;
+    }
+
+    matchStage.screenId = { $in: screenIds };
+  }
+
+  // Aggregate to get unique slots
+  const slots = await Show.aggregate([
+    { $match: matchStage },
+    {
+      $group: {
+        _id: "$slot",
+        count: { $sum: 1 },
+      },
+    },
+    {
+      $project: {
+        _id: 0,
+        slot: "$_id",
+        showCount: "$count",
+      },
+    },
+    { $sort: { slot: 1 } },
+  ]);
+
+  res.status(200).json({
+    success: true,
+    message: "Fetched available slots",
+    data: {
+      date,
+      movieId,
+      hallId: hallId || null,
+      availableSlots: slots,
+    },
+  });
+};
+
+export const getShowByDateSlotAndScreen = async (
+  req: Request,
+  res: Response,
+) => {
+  const date = Array.isArray(req.query.date)
+    ? (req.query.date[0] as string)
+    : (req.query.date as string | undefined);
+  const slot = Array.isArray(req.query.slot)
+    ? (req.query.slot[0] as string)
+    : (req.query.slot as string | undefined);
+  const screenId = Array.isArray(req.query.screenId)
+    ? (req.query.screenId[0] as string)
+    : (req.query.screenId as string | undefined);
+
+  // Validate required fields
+  if (!date || !slot || !screenId) {
+    res.status(400).json({
+      success: false,
+      message: "date, slot, and screenId are required",
+    });
+    return;
+  }
+
+  // Validate screenId format
+  if (!mongoose.Types.ObjectId.isValid(screenId)) {
+    res.status(400).json({
+      success: false,
+      message: "Invalid screenId",
+    });
+    return;
+  }
+
+  // Validate slot
+  if (!Object.keys(Slots).includes(slot)) {
+    res.status(400).json({
+      success: false,
+      message: "Invalid slot value",
+    });
+    return;
+  }
+
+  // Build date range for the entire day
+  const start = new Date(date);
+  start.setHours(0, 0, 0, 0);
+  const end = new Date(date);
+  end.setHours(23, 59, 59, 999);
+
+  // Find the show
+  const show = await Show.findOne({
+    screenId: new mongoose.Types.ObjectId(screenId),
+    slot: slot,
+    startTime: { $gte: start, $lte: end },
+  })
+    .populate("movieId", "title duration genre imageUrl")
+    .populate("screenId", "name hallId rows columns");
+
+  if (!show) {
+    res.status(404).json({
+      success: false,
+      message: "No show found for the given date, slot, and screen",
+    });
+    return;
+  }
+
+  res.status(200).json({
+    success: true,
+    message: "Show found successfully",
+    data: show,
+  });
 };

@@ -1,7 +1,7 @@
 import mongoose from "mongoose";
 const Schema = mongoose.Schema;
 
-interface IMovie {
+export interface IMovie extends mongoose.Document {
   title: string;
   duration: number;
   genre: string;

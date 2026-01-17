@@ -9,9 +9,17 @@ export const getUsers = async (req: Request, res: Response) => {
   let query = {};
 
   if (role && Object.values(Role).includes(role as Role)) {
-    query = { role };
+    query = { ...query, role };
   } else {
     throw new AppError("This role does not exist", 404);
+  }
+
+  const { dateFrom, dateTo } = req.query;
+
+  if (dateFrom || dateTo) {
+    (query as any).createdAt = {};
+    if (dateFrom) (query as any).createdAt.$gte = new Date(dateFrom as string);
+    if (dateTo) (query as any).createdAt.$lte = new Date(dateTo as string);
   }
 
   const users = await User.find(query).select(

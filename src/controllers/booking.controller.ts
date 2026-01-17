@@ -29,6 +29,27 @@ export const getBookings = async (req: Request, res: Response) => {
   });
 };
 
+// Get bookings by user
+export const getBookingsByUser = async (req: Request, res: Response) => {
+  const { userId } = req.params;
+
+  if (!ObjectId.isValid(userId)) {
+    throw new AppError("Invalid user ID", 400);
+  }
+
+  const bookings = await Booking.find({ userId })
+    .populate("movieId", "title imageUrl")
+    .populate("showId", "startTime endTime")
+    .populate("seats", "seatNumber")
+    .sort({ createdAt: -1 });
+
+  res.status(200).json({
+    success: true,
+    message: "User bookings fetched successfully",
+    bookings,
+  });
+};
+
 // Create a new booking
 export const createBooking = async (req: Request, res: Response) => {
   const { userId, guestId, showId, screenId, movieId, seats } = req.body;
@@ -118,10 +139,15 @@ export const createBooking = async (req: Request, res: Response) => {
 
     if (existingBookings.length > 0) {
       // Double check active bookings
-       const activeBookings = existingBookings.filter(b => b.paymentStatus !== PaymentStatus.FAILED && !b.isCancelled);
-       if(activeBookings.length > 0) {
-          throw new AppError("These seats are already booked (booking check)", 400);
-       }
+      const activeBookings = existingBookings.filter(
+        (b) => b.paymentStatus !== PaymentStatus.FAILED && !b.isCancelled,
+      );
+      if (activeBookings.length > 0) {
+        throw new AppError(
+          "These seats are already booked (booking check)",
+          400,
+        );
+      }
     }
 
     const totalPrice = show.basePrice * seatDocs.length;
@@ -189,7 +215,7 @@ export const initiatePayment = async (req: Request, res: Response) => {
   }
 
   if (booking.paymentStatus === PaymentStatus.PAID) {
-     throw new AppError("Booking is already paid!", 400);
+    throw new AppError("Booking is already paid!", 400);
   }
 
   let user = null;
