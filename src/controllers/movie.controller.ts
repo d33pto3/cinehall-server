@@ -147,3 +147,33 @@ export const comingSoonMovies = async (req: Request, res: Response) => {
     data: movies,
   });
 };
+
+export const comingSoonMovies = async (req: Request, res: Response) => {
+  const today = new Date();
+
+  const allMovies = await Movie.find();
+
+  const nowShowingMovieIds = await Show.distinct("movieId", {
+    endTime: { $gte: today },
+  });
+
+  const comingSoonMovies = allMovies.filter(
+    (movie) => !nowShowingMovieIds.includes(movie._id),
+  );
+
+  if (comingSoonMovies.length === 0) {
+    res.status(200).json({
+      success: true,
+      message: "Fetch all now showing movies",
+      movies: [],
+    });
+
+    return;
+  }
+
+  res.status(200).json({
+    success: true,
+    message: "Fetch all now showing movies",
+    data: comingSoonMovies,
+  });
+};
